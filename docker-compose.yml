@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  wp-plugin-ci:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wp-plugin-ci
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=wordpress
+      - DB_USER=wordpress
+      - DB_PASSWORD=wordpress
+    volumes:
+      - .:/workspace
+    ports:
+      - "8080:80"
+    networks:
+      - wp-plugin-ci
+
+  db:
+    image: mariadb:latest
+    container_name: wp-plugin-ci-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - wp-plugin-ci
+
+volumes:
+  db_data:
+
+networks:
+  wp-network:
+    driver: bridge
