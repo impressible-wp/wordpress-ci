@@ -35,9 +35,10 @@ if [ ! -f /var/www/html/wp-config.php ]; then
     echo " * Dynamically set WP_HOME and WP_SITEURL" >> $CONFIG
     echo " */" >> $CONFIG
     echo "if ( isset( \$_SERVER['HTTP_HOST'] ) ) {" >> $CONFIG
+    echo "    \$host = \$_SERVER['HTTP_HOST'] ?? 'localhost';" >> $CONFIG
     echo "    \$schema = isset( \$_SERVER['HTTPS'] ) && 'on' === \$_SERVER['HTTPS'] ? 'https' : 'http';" >> $CONFIG
-    echo "    define( 'WP_HOME', \$schema . '://' . \$_SERVER['HTTP_HOST'] );" >> $CONFIG
-    echo "    define( 'WP_SITEURL', \$schema . '://' . \$_SERVER['HTTP_HOST'] );" >> $CONFIG
+    echo "    define( 'WP_HOME', \$schema . '://' . \$host );" >> $CONFIG
+    echo "    define( 'WP_SITEURL', \$schema . '://' . \$host );" >> $CONFIG
     echo "}" >> $CONFIG
     echo "" >> $CONFIG
     tail --lines="2" /var/www/html/wp-config-docker.php >> $CONFIG
@@ -45,14 +46,25 @@ else
     echo "wp-config.php already exists in the Wordpress source, skipping setup."
 fi
 
-# If environment variables are set, use them to configure the database.
-echo "Using wp-cli to setup the WordPress..."
-wp core install \
-    --url="http://localhost" \
-    --title="${WORDPRESS_TITLE:-Wordpress\-Plugin\-CI}" \
-    --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
-    --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
-    --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
+# Check if database is up and running before continuing.
+echo "Waiting for database to be ready..."
+while ! wp db check --allow-root --quiet; do
+    sleep 1
+done
+
+# Check if Wordpress is already installed.
+if wp core is-installed --allow-root --quiet; then
+    echo "Wordpress is already installed, skipping setup."
+else
+    # If environment variables are set, use them to configure the database.
+    echo "Wordpress is not installed yet. Using wp-cli to perform unattended installation..."
+    wp core install \
+        --url="http://localhost" \
+        --title="${WORDPRESS_TITLE:-WordpressPluginCI}" \
+        --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
+        --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
+        --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
+fi
 
 # Configure permalinks to use "Post name" structure.
 wp rewrite structure '/%postname%/'
