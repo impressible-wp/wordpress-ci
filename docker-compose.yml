@@ -18,7 +18,7 @@ services:
     ports:
       - "8080:80"
     networks:
-      - wp-plugin-ci-network
+      - network
 
   db:
     image: mariadb:latest
@@ -34,11 +34,11 @@ services:
     ports:
       - "3306:3306"
     networks:
-      - wp-plugin-ci-network
+      - network
 
 volumes:
   db_data:
 
 networks:
-  wp-plugin-ci-network:
+  network:
     driver: bridge
