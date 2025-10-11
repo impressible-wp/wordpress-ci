@@ -1,2 +1,7 @@
+# Plugin directory
 /myplugin/*
 !/myplugin/.gitkeep
+
+# Composer setup script and checksum files
+/composer-setup.php
+*.sha384sum

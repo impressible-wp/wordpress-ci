@@ -7,7 +7,14 @@ This is a project to provide fundation for CI testing any Wordpress plugin
 
 This repository includes [config file](Dockerfile) to build the environment for
 CI testing.
- 
+
+### Software Included
+
+Besides the Wordpress source code, the docker image pre-installed the below CLI tools for the ease
+of development.
+
+* [wp](https://wp-cli.org/): Wordpress's wp-cli.
+* [composer](https://getcomposer.org): Composer package manager.
 
 ### Environment Variables
 
