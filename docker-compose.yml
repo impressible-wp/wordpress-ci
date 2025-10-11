@@ -29,15 +29,10 @@ services:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
-    volumes:
-      - db_data:/var/lib/mysql
     ports:
       - "3306:3306"
     networks:
       - network
-
-volumes:
-  db_data:
 
 networks:
   network:
