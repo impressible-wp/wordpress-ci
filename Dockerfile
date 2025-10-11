@@ -19,6 +19,9 @@ RUN curl -o - https://composer.github.io/installer.sha384sum | sha384sum --check
 RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 RUN php -r "unlink('composer-setup.php');"
 
+# Install MySQL client
+RUN apt-get update && apt-get install -y default-mysql-client
+
 # Use the proxy script to allow for custom entrypoints
 ENTRYPOINT ["docker-entrypoint-proxy.sh"]
 CMD ["apache2-foreground"]
