@@ -14,11 +14,11 @@ services:
       - DB_USER=wordpress
       - DB_PASSWORD=wordpress
     volumes:
-      - .:/workspace
+      - .:/myplugin
     ports:
       - "8080:80"
     networks:
-      - wp-plugin-ci
+      - wp-plugin-ci-network
 
   db:
     image: mariadb:latest
@@ -34,11 +34,11 @@ services:
     ports:
       - "3306:3306"
     networks:
-      - wp-plugin-ci
+      - wp-plugin-ci-network
 
 volumes:
   db_data:
 
 networks:
-  wp-network:
+  wp-plugin-ci-network:
     driver: bridge

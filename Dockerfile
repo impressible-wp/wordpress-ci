@@ -1,7 +1,7 @@
 FROM docker.io/library/wordpress:apache
 
 # Run everything in a plugin folder
-WORKDIR /usr/src/wordpress/wp-content/plugins/plugin
+WORKDIR /var/www/html/wordpress/wp-content/plugins/myplugin
 
 # Copy the proxy entrypoint script and properly set permissions
 COPY docker-entrypoint-proxy.sh /usr/local/bin/

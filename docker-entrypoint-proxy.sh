@@ -11,14 +11,21 @@
 # Get the current working directory
 WORKDIR=$(pwd)
 
-# Go to the original entrypoint directory
-cd /usr/src/wordpress
+# Install Wordpress to the folder if it is not there.
+if [ ! -f /var/www/html/wp-load.php ]; then
+    echo "Installing Wordpress..."
+    mv /var/www/html /var/www/html.original
+    cp -Rpdf /usr/src/wordpress /var/www/html
+fi
 
 # Use a docker-specific version of wp-config by default.
 # You may simply delete and overwrite the config if you want.
-if [ -f ./wp-config.php ]; then
-    ln -s ./wp-config-docker.php ./wp-config.php
+if [ -f /var/www/html/wp-config.php ]; then
+    ln -s /var/www/html/wp-config-docker.php /var/www/html/wp-config.php
 fi
+
+# Go to the original entrypoint directory
+cd /usr/src/wordpress
 
 # Run the original entrypoint with the current working directory mounted
 docker-entrypoint.sh $@
