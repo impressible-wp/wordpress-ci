@@ -5,7 +5,7 @@ This is a project to provide fundation for CI testing any Wordpress plugin
 
 ## Docker Container
 
-This repository includes [config file](Dockerfile) to build the environment for
+This repository includes [config file](docker/Dockerfile) to build the environment for
 CI testing.
 
 ### Software Included
@@ -19,7 +19,7 @@ of development.
 ### Environment Variables
 
 Other than the variables supported by the default [Wordpress image](https://hub.docker.com/_/wordpress),
-the docker build from this [Dockerfile](Dockerfile) support a few variables for configuring the
+the docker build from this [Dockerfile](docker/Dockerfile) support a few variables for configuring the
 unattained Wordpress installation:
 
 * `WORDPRESS_TITLE`: The site title.
