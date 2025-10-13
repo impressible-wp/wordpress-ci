@@ -132,22 +132,22 @@ jobs:
       - name: Build action
         run: npm run build
 
-      - name: Create Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Get the latest tag
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          
-          # Increment version (simple patch increment)
-          NEW_VERSION=$(echo $LATEST_TAG | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
-          
-          # Create and push tag
-          git tag $NEW_VERSION
-          git push origin $NEW_VERSION
-          
-          # Create GitHub release
-          gh release create $NEW_VERSION \
-            --title "Release $NEW_VERSION" \
-            --notes "Automated release from main branch" \
-            --latest
+#      - name: Create Release
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          # Get the latest tag
+#          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+#          
+#          # Increment version (simple patch increment)
+#          NEW_VERSION=$(echo $LATEST_TAG | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+#          
+#          # Create and push tag
+#          git tag $NEW_VERSION
+#          git push origin $NEW_VERSION
+#          
+#          # Create GitHub release
+#          gh release create $NEW_VERSION \
+#            --title "Release $NEW_VERSION" \
+#            --notes "Automated release from main branch" \
+#            --latest
