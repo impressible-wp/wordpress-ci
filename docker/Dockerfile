@@ -1,4 +1,5 @@
-FROM docker.io/library/wordpress:apache
+ARG PHP_VERSION=8.1
+FROM docker.io/library/php:${PHP_VERSION}-apache
 
 # Run everything in a plugin folder
 WORKDIR /var/www/html/wp-content/plugins/myplugin

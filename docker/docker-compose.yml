@@ -3,8 +3,11 @@ version: '3.8'
 services:
   wp-plugin-ci:
     build:
+      image: wp-plugin-ci:${PHP_VERSION:-8.1}
       context: .
       dockerfile: Dockerfile
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.1}
     container_name: wp-plugin-ci
     depends_on:
       - db
