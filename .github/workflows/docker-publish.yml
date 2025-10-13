@@ -24,8 +24,11 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3', '8.4']
+        wordpress-version: ['latest']
     permissions:
       contents: read
       packages: write
@@ -68,10 +71,18 @@ jobs:
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-php${{ matrix.php-version }}
+            type=ref,event=pr,suffix=-php${{ matrix.php-version }}
+            type=semver,pattern={{version}},suffix=-php${{ matrix.php-version }}
+            type=semver,pattern={{major}}.{{minor}},suffix=-php${{ matrix.php-version }}
+            type=semver,pattern={{major}},suffix=-php${{ matrix.php-version }}
+            type=schedule,suffix=-php${{ matrix.php-version }}
+            type=raw,value=php${{ matrix.php-version }}-latest,enable={{is_default_branch}}
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
-      - name: Build and push Docker image
+      - name: Build and push Docker image (PHP ${{ matrix.php-version }})
         id: build-and-push
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
         with:
@@ -79,8 +90,11 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          build-args: |
+            PHP_VERSION=${{ matrix.php-version }}
+            WORDPRESS_VERSION=${{ matrix.wordpress-version }}
+          cache-from: type=gha,scope=wordpress${{ matrix.wordpress-version }}-php${{ matrix.php-version }}
+          cache-to: type=gha,mode=max,scope=wordpress${{ matrix.wordpress-version }}-php${{ matrix.php-version }}
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
@@ -96,3 +110,59 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+  create-manifest:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Login against a Docker registry
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata for manifest
+      - name: Extract Docker metadata for manifest
+        id: meta-manifest
+        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=schedule
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Create and push manifest for all PHP versions
+      - name: Create and push manifest list
+        run: |
+          # Get the base tag without PHP version suffix
+          BASE_TAGS="${{ steps.meta-manifest.outputs.tags }}"
+
+          for BASE_TAG in $BASE_TAGS; do
+            echo "Creating manifest for: $BASE_TAG"
+
+            # Create manifest list with all PHP versions
+            docker manifest create $BASE_TAG \
+              ${BASE_TAG}-php8.1 \
+              ${BASE_TAG}-php8.2 \
+              ${BASE_TAG}-php8.3 \
+              ${BASE_TAG}-php8.4
+
+            # Push the manifest list
+            docker manifest push $BASE_TAG
+
+            echo "✅ Created manifest: $BASE_TAG"
+          done

@@ -27,6 +27,10 @@ inputs:
     description: 'Optional setup script to run before tests'
     required: false
     default: ''
+  use-prebuilt-image:
+    description: 'Use pre-built Docker image instead of building locally'
+    required: false
+    default: 'true'
 
 outputs:
   status:

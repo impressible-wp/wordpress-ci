@@ -4,6 +4,7 @@ export interface PluginTestConfig {
     wordpressVersion: string;
     testCommand: string;
     setupScript?: string;
+    usePrebuiltImage?: boolean;
 }
 export interface TestResult {
     success: boolean;

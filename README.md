@@ -4,12 +4,13 @@ A GitHub Action that provides a complete CI/CD solution for WordPress plugin tes
 
 ## Features
 
-- 🐘 **Multiple PHP versions** - Test with PHP 7.4, 8.0, 8.1, 8.2, 8.3
+- 🐘 **Multiple PHP versions** - Test with PHP 8.1, 8.2, 8.3, 8.4
 - 🔧 **WordPress versions** - Test against different WordPress versions
 - 🛠️ **Pre-installed tools** - Includes WP-CLI, Composer, PHPUnit, and more
 - 🐳 **Dockerized environment** - Consistent testing environment
 - 📊 **Test reporting** - Detailed test output and status reporting
 - ⚡ **Fast setup** - Pre-built Docker images for quick CI runs
+- 🏷️ **Tagged images** - Individual images for each PHP version
 
 ## Quick Start
 
@@ -29,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+        php-version: ['8.1', '8.2', '8.3', '8.4']
         wordpress-version: ['6.3', '6.4', 'latest']
     
     steps:
@@ -54,6 +55,7 @@ jobs:
 | `wordpress-version` | WordPress version to use | ❌ | `latest` |
 | `test-command` | Command to run the tests | ❌ | `composer test` |
 | `setup-script` | Optional setup script to run before tests | ❌ | `` |
+| `use-prebuilt-image` | Use pre-built Docker image instead of building locally | ❌ | `true` |
 
 ## Outputs
 
@@ -95,7 +97,7 @@ jobs:
 ```yaml
 strategy:
   matrix:
-    php: ['8.1', '8.2', '8.3']
+    php: ['8.1', '8.2', '8.3', '8.4']
     wordpress: ['6.2', '6.3', '6.4']
     
 steps:
@@ -104,6 +106,32 @@ steps:
     with:
       php-version: ${{ matrix.php }}
       wordpress-version: ${{ matrix.wordpress }}
+```
+
+## Available Docker Images
+
+The action automatically uses pre-built Docker images hosted on GitHub Container Registry. Available tags:
+
+- `ghcr.io/impressible-wp/wordpress-plugin-ci:php8.1-latest`
+- `ghcr.io/impressible-wp/wordpress-plugin-ci:php8.2-latest`
+- `ghcr.io/impressible-wp/wordpress-plugin-ci:php8.3-latest`
+- `ghcr.io/impressible-wp/wordpress-plugin-ci:php8.4-latest`
+- `ghcr.io/impressible-wp/wordpress-plugin-ci:latest` (manifest pointing to all PHP versions)
+
+You can also use specific version tags:
+- `ghcr.io/impressible-wp/wordpress-plugin-ci:v1.0.0-php8.1`
+- `ghcr.io/impressible-wp/wordpress-plugin-ci:main-php8.2`
+
+### Using Local Docker Build
+
+If you prefer to build the Docker image locally instead of using pre-built images:
+
+```yaml
+- name: Test with Local Build
+  uses: impressible-wp/wordpress-plugin-ci@v1
+  with:
+    use-prebuilt-image: false
+    php-version: '8.1'
 ```
 
 ## Docker Container

@@ -9,6 +9,7 @@ export interface PluginTestConfig {
   wordpressVersion: string;
   testCommand: string;
   setupScript?: string;
+  usePrebuiltImage?: boolean;
 }
 
 export interface TestResult {
@@ -37,6 +38,39 @@ function validatePluginDirectory(pluginPath: string): void {
   }
 
   core.info(`✅ Plugin directory validated: ${pluginPath}`);
+}
+
+/**
+ * Pulls the pre-built Docker image for the WordPress testing environment
+ */
+async function pullDockerImage(config: PluginTestConfig): Promise<void> {
+  core.info('📥 Pulling WordPress testing environment...');
+  
+  const imageTag = `ghcr.io/impressible-wp/wordpress-plugin-ci:php${config.phpVersion}-latest`;
+  
+  const pullArgs = [
+    'pull',
+    imageTag
+  ];
+
+  try {
+    await exec.exec('docker', pullArgs, {
+      cwd: process.cwd(),
+      env: { ...process.env } as Record<string, string>,
+    });
+
+    // Tag the pulled image as wp-plugin-ci for consistency
+    const tagArgs = ['tag', imageTag, 'wp-plugin-ci'];
+    await exec.exec('docker', tagArgs, {
+      cwd: process.cwd(),
+      env: { ...process.env } as Record<string, string>,
+    });
+
+    core.info('✅ Docker image pulled successfully');
+  } catch (error) {
+    core.warning('Failed to pull pre-built image, falling back to local build');
+    await buildDockerImage(config);
+  }
 }
 
 /**
@@ -130,8 +164,12 @@ export async function runWordPressPluginTests(config: PluginTestConfig): Promise
     // Validate inputs
     validatePluginDirectory(config.pluginPath);
     
-    // Build Docker image
-    await buildDockerImage(config);
+    // Pull or build Docker image based on configuration
+    if (config.usePrebuiltImage !== false) {
+      await pullDockerImage(config);
+    } else {
+      await buildDockerImage(config);
+    }
     
     // Run setup script if provided
     await runSetupScript(config);

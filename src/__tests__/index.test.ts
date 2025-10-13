@@ -14,7 +14,7 @@ const mockRunWordPressPluginTests = runWordPressPluginTests as jest.MockedFuncti
 describe('GitHub Action', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-
+    
     // Setup default mock returns
     mockCore.getInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
@@ -23,12 +23,11 @@ describe('GitHub Action', () => {
         'wordpress-version': 'latest',
         'test-command': 'composer test',
         'setup-script': '',
+        'use-prebuilt-image': 'true',
       };
       return inputs[name] || '';
     });
-  });
-
-  it('should run successfully with valid inputs', async () => {
+  });  it('should run successfully with valid inputs', async () => {
     mockRunWordPressPluginTests.mockResolvedValue({
       success: true,
       output: 'All tests passed!',
@@ -77,6 +76,7 @@ describe('GitHub Action', () => {
         'wordpress-version': '6.4',
         'test-command': 'npm test',
         'setup-script': 'npm install',
+        'use-prebuilt-image': 'false',
       };
       return inputs[name] || '';
     });
@@ -94,6 +94,7 @@ describe('GitHub Action', () => {
       wordpressVersion: '6.4',
       testCommand: 'npm test',
       setupScript: 'npm install',
+      usePrebuiltImage: false,
     });
   });
 });

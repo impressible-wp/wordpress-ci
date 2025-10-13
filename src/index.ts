@@ -12,11 +12,13 @@ async function run(): Promise<void> {
     const wordpressVersion = core.getInput('wordpress-version') || 'latest';
     const testCommand = core.getInput('test-command') || 'composer test';
     const setupScript = core.getInput('setup-script') || '';
+    const usePrebuiltImage = core.getInput('use-prebuilt-image') === 'true';
     
     core.info(`Starting WordPress Plugin CI for plugin at: ${pluginPath}`);
     core.info(`PHP Version: ${phpVersion}`);
     core.info(`WordPress Version: ${wordpressVersion}`);
     core.info(`Test Command: ${testCommand}`);
+    core.info(`Use Pre-built Image: ${usePrebuiltImage}`);
 
     // Run the WordPress plugin tests
     const result = await runWordPressPluginTests({
@@ -25,6 +27,7 @@ async function run(): Promise<void> {
       wordpressVersion,
       testCommand,
       setupScript,
+      usePrebuiltImage,
     });
 
     if (result.success) {
