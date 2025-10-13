@@ -1,4 +1,5 @@
 ARG PHP_VERSION=8.1
+ARG WORDPRESS_VERSION=latest
 FROM docker.io/library/php:${PHP_VERSION}-apache
 
 # Run everything in a plugin folder
@@ -25,7 +26,7 @@ RUN php -r "unlink('composer-setup.php');"
 
 # Download the latest WordPress core to the source folder
 RUN mkdir -p /usr/src/wordpress
-RUN wp core download --allow-root --path=/usr/src/wordpress --version=latest
+RUN wp core download --allow-root --path=/usr/src/wordpress --version=${WORDPRESS_VERSION}
 COPY wp-config-docker.php /usr/src/wordpress/wp-config-docker.php
 
 # Install MySQL client
