@@ -64,6 +64,23 @@ jobs:
       - name: Build action
         run: npm run build
 
+      - name: Check if dist/ is up to date
+        run: |
+          if [ ! -f "dist/index.js" ]; then
+            echo "Error: dist/index.js not found. Please run 'npm run build'."
+            exit 1
+          fi
+          
+          # Check if any src file is newer than the newest dist file
+          if [ -n "$(find src -newer dist/index.js -type f 2>/dev/null)" ]; then
+            echo "Error: Source files are newer than dist files - rebuild needed"
+            echo "Newer source files:"
+            find src -newer dist/index.js -type f 2>/dev/null
+            exit 1
+          fi
+          
+          echo "✅ dist/ is up to date with source files"
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
