@@ -114,43 +114,25 @@ jobs:
         # against the sigstore community Fulcio instance.
         run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
 
-      # Login to Docker registry
-      - name: Log into registry ${{ env.REGISTRY }}
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Extract metadata for manifest
-      - name: Extract Docker metadata for manifest
-        id: meta-manifest
-        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch,suffix=-php${{ matrix.php-version }}
-            type=ref,event=pr,suffix=-php${{ matrix.php-version }}
-            type=semver,pattern={{version}},suffix=-php${{ matrix.php-version }}
-            type=semver,pattern={{major}}.{{minor}},suffix=-php${{ matrix.php-version }}
-            type=semver,pattern={{major}},suffix=-php${{ matrix.php-version }}
-            type=schedule,suffix=-php${{ matrix.php-version }}
-            type=raw,value=php${{ matrix.php-version }}-latest,enable={{is_default_branch}}
-
-      - name: debug output
-        run: echo "TAGS=${{ steps.meta-manifest.outputs.tags }}"
-      
-      # Create and push manifest list for this PHP versions except on PRs
-      - name: Create and push manifest list
-        if: github.event_name != 'pull_request'
+      # Create and push Docker manifest for this PHP version
+      - name: Create and push Docker manifest (PHP ${{ matrix.php-version }})
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
-          # Get the base tag without PHP version suffix
-          BASE_TAGS="${{ steps.meta-manifest.outputs.tags }}"
+          echo "Creating Docker manifest for PHP ${{ matrix.php-version }}"
 
-          if [ "${{ matrix.php-version }}" = "${{ env.PHP_VERSION_LATEST }}" ]; then
-            # Also create manifest for the "latest" tag without PHP version suffix
-            docker manifest create ${BASE_TAGS} ${BASE_TAGS}-php${{ matrix.php-version }}
-          else
-            docker manifest create ${BASE_TAGS}-php${{ matrix.php-version }}
-          fi 
+          # Get all tags for this build
+          TAGS="${{ steps.meta.outputs.tags }}"
+          DIGEST="${{ steps.build-and-push.outputs.digest }}"
+
+          for TAG in $TAGS; do
+            echo "Creating manifest for tag: $TAG"
+
+            # Create manifest list pointing to the built image digest
+            docker manifest create $TAG $TAG@$DIGEST
+
+            # Push the manifest
+            docker manifest push $TAG
+
+            echo "✅ Created and pushed manifest: $TAG"
+          done
+      
