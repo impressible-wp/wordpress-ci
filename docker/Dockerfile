@@ -32,8 +32,9 @@ RUN mkdir -p /usr/src/wordpress
 RUN wp core download --allow-root --path=/usr/src/wordpress --version=${WORDPRESS_VERSION}
 COPY wp-config-docker.php /usr/src/wordpress/wp-config-docker.php
 
-# Install MySQL client
+# Install MySQL client and other dependencies
 RUN apt-get update && apt-get install -y default-mysql-client libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions and other dependencies
 RUN docker-php-ext-install gd mbstring pdo pdo_mysql mysqli zip
