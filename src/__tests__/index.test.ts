@@ -14,7 +14,7 @@ const mockRunWordPressPluginTests = runWordPressPluginTests as jest.MockedFuncti
 describe('GitHub Action', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup default mock returns
     mockCore.getInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
@@ -27,7 +27,8 @@ describe('GitHub Action', () => {
       };
       return inputs[name] || '';
     });
-  });  it('should run successfully with valid inputs', async () => {
+  });
+  it('should run successfully with valid inputs', async () => {
     mockRunWordPressPluginTests.mockResolvedValue({
       success: true,
       output: 'All tests passed!',
@@ -66,6 +67,77 @@ describe('GitHub Action', () => {
 
     expect(mockCore.setFailed).toHaveBeenCalledWith('Action failed with error: Unexpected error');
     expect(mockCore.setOutput).toHaveBeenCalledWith('status', 'error');
+  });
+
+  it('should handle usePrebuiltImage default behavior', async () => {
+    mockCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'plugin-path': './test-plugin',
+        'php-version': '8.1',
+        'wordpress-version': 'latest',
+        'test-command': 'composer test',
+        'setup-script': '',
+        // Explicitly not setting 'use-prebuilt-image'
+      };
+      return inputs[name] || '';
+    });
+
+    mockRunWordPressPluginTests.mockResolvedValue({
+      success: true,
+      output: 'Tests completed',
+    });
+
+    await run();
+
+    expect(mockRunWordPressPluginTests).toHaveBeenCalledWith({
+      pluginPath: './test-plugin',
+      phpVersion: '8.1',
+      wordpressVersion: 'latest',
+      testCommand: 'composer test',
+      setupScript: '',
+      usePrebuiltImage: false, // Should default to false when empty string
+    });
+  });
+
+  it('should handle different usePrebuiltImage values', async () => {
+    // Test with 'false' string
+    mockCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'plugin-path': './test-plugin',
+        'use-prebuilt-image': 'false',
+      };
+      return inputs[name] || '';
+    });
+
+    mockRunWordPressPluginTests.mockResolvedValue({
+      success: true,
+      output: 'Tests completed',
+    });
+
+    await run();
+
+    expect(mockRunWordPressPluginTests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usePrebuiltImage: false,
+      })
+    );
+
+    // Test with 'true' string
+    mockCore.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'plugin-path': './test-plugin',
+        'use-prebuilt-image': 'true',
+      };
+      return inputs[name] || '';
+    });
+
+    await run();
+
+    expect(mockRunWordPressPluginTests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usePrebuiltImage: true,
+      })
+    );
   });
 
   it('should use custom inputs when provided', async () => {

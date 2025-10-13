@@ -48,7 +48,7 @@ describe('WordPress Plugin CI', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     defaultConfig = {
       pluginPath: './test-plugin',
       phpVersion: '8.1',
@@ -73,102 +73,137 @@ describe('WordPress Plugin CI', () => {
       expect(result.success).toBe(true);
       expect(result.output).toBeDefined();
       expect(result.error).toBeUndefined();
-      
+
       // Verify directory validation
       expect(mockExistsSync).toHaveBeenCalledWith('./test-plugin');
       expect(mockReaddirSync).toHaveBeenCalledWith('./test-plugin');
-      
+
       // Verify Docker image pull
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'pull',
-        'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.1-latest'
-      ], expect.any(Object));
-      
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        ['pull', 'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.1-latest'],
+        expect.any(Object)
+      );
+
       // Verify Docker tag
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'tag',
-        'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.1-latest',
-        'wp-plugin-ci'
-      ], expect.any(Object));
-      
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        ['tag', 'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.1-latest', 'wp-plugin-ci'],
+        expect.any(Object)
+      );
+
       // Verify test execution
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'run', '--rm',
-        '-v', '/./test-plugin:/workspace/plugin',
-        '-w', '/workspace/plugin',
-        'wp-plugin-ci',
-        'bash', '-c', 'composer test'
-      ], expect.any(Object));
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        [
+          'run',
+          '--rm',
+          '-v',
+          '/./test-plugin:/workspace/plugin',
+          '-w',
+          '/workspace/plugin',
+          'wp-plugin-ci',
+          'bash',
+          '-c',
+          'composer test',
+        ],
+        expect.any(Object)
+      );
     });
 
     it('should use local build when usePrebuiltImage is false', async () => {
       const config = { ...defaultConfig, usePrebuiltImage: false };
-      
+
       const result = await runWordPressPluginTests(config);
 
       expect(result.success).toBe(true);
-      
+
       // Verify Docker build instead of pull
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'build',
-        '-t', 'wp-plugin-ci',
-        '--build-arg', 'PHP_VERSION=8.1',
-        '--build-arg', 'WP_VERSION=latest',
-        '.'
-      ], expect.any(Object));
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        [
+          'build',
+          '-t',
+          'wp-plugin-ci',
+          '--build-arg',
+          'PHP_VERSION=8.1',
+          '--build-arg',
+          'WP_VERSION=latest',
+          '.',
+        ],
+        expect.any(Object)
+      );
     });
 
     it('should fall back to local build when pulling image fails', async () => {
       // Mock pull to fail, but build to succeed
       mockExec.exec
-        .mockRejectedValueOnce(new Error('Pull failed'))  // Docker pull fails
-        .mockResolvedValueOnce(0)                         // Docker build succeeds
-        .mockResolvedValueOnce(0);                        // Docker run succeeds
+        .mockRejectedValueOnce(new Error('Pull failed')) // Docker pull fails
+        .mockResolvedValueOnce(0) // Docker build succeeds
+        .mockResolvedValueOnce(0); // Docker run succeeds
 
       const result = await runWordPressPluginTests(defaultConfig);
 
       expect(result.success).toBe(true);
-      expect(mockCore.warning).toHaveBeenCalledWith('Failed to pull pre-built image, falling back to local build');
-      
+      expect(mockCore.warning).toHaveBeenCalledWith(
+        'Failed to pull pre-built image, falling back to local build'
+      );
+
       // Verify it tried to pull first, then built
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'pull',
-        'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.1-latest'
-      ], expect.any(Object));
-      
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'build',
-        '-t', 'wp-plugin-ci',
-        '--build-arg', 'PHP_VERSION=8.1',
-        '--build-arg', 'WP_VERSION=latest',
-        '.'
-      ], expect.any(Object));
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        ['pull', 'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.1-latest'],
+        expect.any(Object)
+      );
+
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        [
+          'build',
+          '-t',
+          'wp-plugin-ci',
+          '--build-arg',
+          'PHP_VERSION=8.1',
+          '--build-arg',
+          'WP_VERSION=latest',
+          '.',
+        ],
+        expect.any(Object)
+      );
     });
 
     it('should run setup script when provided', async () => {
-      const config = { 
-        ...defaultConfig, 
-        setupScript: 'composer install --no-dev' 
+      const config = {
+        ...defaultConfig,
+        setupScript: 'composer install --no-dev',
       };
-      
+
       await runWordPressPluginTests(config);
 
       // Verify setup script execution
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'run', '--rm',
-        '-v', '/./test-plugin:/workspace/plugin',
-        'wp-plugin-ci',
-        'bash', '-c', 'composer install --no-dev'
-      ], expect.any(Object));
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        [
+          'run',
+          '--rm',
+          '-v',
+          '/./test-plugin:/workspace/plugin',
+          'wp-plugin-ci',
+          'bash',
+          '-c',
+          'composer install --no-dev',
+        ],
+        expect.any(Object)
+      );
     });
 
     it('should skip setup script when empty', async () => {
       const config = { ...defaultConfig, setupScript: '' };
-      
+
       await runWordPressPluginTests(config);
 
       // Should not call setup script
-      const setupCalls = mockExec.exec.mock.calls.filter(call => 
+      const setupCalls = mockExec.exec.mock.calls.filter(call =>
         call[1]?.includes('composer install --no-dev')
       );
       expect(setupCalls).toHaveLength(0);
@@ -176,12 +211,12 @@ describe('WordPress Plugin CI', () => {
 
     it('should skip setup script when whitespace only', async () => {
       const config = { ...defaultConfig, setupScript: '   \n  \t  ' };
-      
+
       await runWordPressPluginTests(config);
 
       // Should not call setup script
-      const setupCalls = mockExec.exec.mock.calls.filter(call => 
-        Array.isArray(call[1]) && call[1].some(arg => arg.includes('composer install'))
+      const setupCalls = mockExec.exec.mock.calls.filter(
+        call => Array.isArray(call[1]) && call[1].some(arg => arg.includes('composer install'))
       );
       expect(setupCalls).toHaveLength(0);
     });
@@ -200,7 +235,7 @@ describe('WordPress Plugin CI', () => {
 
     it('should warn when composer.json is missing', async () => {
       mockExistsSync
-        .mockReturnValueOnce(true)   // Plugin directory exists
+        .mockReturnValueOnce(true) // Plugin directory exists
         .mockReturnValueOnce(false); // composer.json doesn't exist
       mockReaddirSync.mockReturnValue(['test-plugin.php'] as any);
 
@@ -229,7 +264,7 @@ describe('WordPress Plugin CI', () => {
     it('should capture test output from stdout and stderr', async () => {
       const mockStdout = 'Test output line 1\nTest passed\n';
       const mockStderr = 'Warning: deprecated function\n';
-      
+
       mockExec.exec.mockImplementation((_command, args, options) => {
         // Simulate the test run command (last exec call)
         if (Array.isArray(args) && args.includes('-w')) {
@@ -237,7 +272,7 @@ describe('WordPress Plugin CI', () => {
           if (listeners) {
             // Simulate stdout output
             listeners.stdout?.(Buffer.from(mockStdout));
-            // Simulate stderr output  
+            // Simulate stderr output
             listeners.stderr?.(Buffer.from(mockStderr));
           }
         }
@@ -254,31 +289,39 @@ describe('WordPress Plugin CI', () => {
 
     it('should use correct PHP version in image tag', async () => {
       const config = { ...defaultConfig, phpVersion: '8.3' };
-      
+
       await runWordPressPluginTests(config);
 
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'pull',
-        'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.3-latest'
-      ], expect.any(Object));
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        ['pull', 'ghcr.io/impressible-wp/wordpress-plugin-ci:php8.3-latest'],
+        expect.any(Object)
+      );
     });
 
     it('should use correct WordPress version in build args', async () => {
-      const config = { 
-        ...defaultConfig, 
+      const config = {
+        ...defaultConfig,
         usePrebuiltImage: false,
-        wordpressVersion: '6.4' 
+        wordpressVersion: '6.4',
       };
-      
+
       await runWordPressPluginTests(config);
 
-      expect(mockExec.exec).toHaveBeenCalledWith('docker', [
-        'build',
-        '-t', 'wp-plugin-ci',
-        '--build-arg', 'PHP_VERSION=8.1',
-        '--build-arg', 'WP_VERSION=6.4',
-        '.'
-      ], expect.any(Object));
+      expect(mockExec.exec).toHaveBeenCalledWith(
+        'docker',
+        [
+          'build',
+          '-t',
+          'wp-plugin-ci',
+          '--build-arg',
+          'PHP_VERSION=8.1',
+          '--build-arg',
+          'WP_VERSION=6.4',
+          '.',
+        ],
+        expect.any(Object)
+      );
     });
 
     it('should handle non-Error exceptions', async () => {
@@ -301,7 +344,7 @@ describe('WordPress Plugin CI', () => {
 
     it('should resolve plugin path correctly', async () => {
       const config = { ...defaultConfig, pluginPath: '../my-plugin' };
-      
+
       await runWordPressPluginTests(config);
 
       expect(mockResolve).toHaveBeenCalledWith('../my-plugin');
