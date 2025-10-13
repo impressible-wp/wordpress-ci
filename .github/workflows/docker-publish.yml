@@ -113,3 +113,12 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+      # Make the published image publicly accessible on GitHub Container Registry.
+      - name: Make image publicly accessible
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          curl -s -X PATCH -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/user/packages/container/${{ env.IMAGE_NAME }}/visibility \
+            -d '{"visibility":"public"}'
