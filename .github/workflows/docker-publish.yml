@@ -148,9 +148,9 @@ jobs:
           # Get the base tag without PHP version suffix
           BASE_TAGS="${{ steps.meta-manifest.outputs.tags }}"
 
-          #if [ "${{ matrix.php-version }}" = "${{ env.PHP_VERSION_LATEST }}" ]; then
-          #  # Also create manifest for the "latest" tag without PHP version suffix
-          #  docker manifest create ${BASE_TAGS} ${BASE_TAGS}-php${{ matrix.php-version }}
-          #else
-          #  docker manifest create ${BASE_TAGS}-php${{ matrix.php-version }}
-          #fi 
+          if [ "${{ matrix.php-version }}" = "${{ env.PHP_VERSION_LATEST }}" ]; then
+            # Also create manifest for the "latest" tag without PHP version suffix
+            docker manifest create ${BASE_TAGS} ${BASE_TAGS}-php${{ matrix.php-version }}
+          else
+            docker manifest create ${BASE_TAGS}-php${{ matrix.php-version }}
+          fi 
