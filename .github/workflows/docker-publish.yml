@@ -29,6 +29,9 @@ jobs:
       matrix:
         php-version: ['8.1', '8.2', '8.3', '8.4']
         wordpress-version: ['latest']
+    env:
+      PHP_VERSION_LATEST: '8.4'
+
     permissions:
       contents: read
       packages: write
@@ -111,26 +114,15 @@ jobs:
         # against the sigstore community Fulcio instance.
         run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
 
-  create-manifest:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name != 'pull_request'
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Login against a Docker registry
+      # Login to Docker registry
       - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+      
       # Extract metadata for manifest
       - name: Extract Docker metadata for manifest
         id: meta-manifest
@@ -138,31 +130,27 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=schedule
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch,suffix=-php${{ matrix.php-version }}
+            type=ref,event=pr,suffix=-php${{ matrix.php-version }}
+            type=semver,pattern={{version}},suffix=-php${{ matrix.php-version }}
+            type=semver,pattern={{major}}.{{minor}},suffix=-php${{ matrix.php-version }}
+            type=semver,pattern={{major}},suffix=-php${{ matrix.php-version }}
+            type=schedule,suffix=-php${{ matrix.php-version }}
+            type=raw,value=php${{ matrix.php-version }}-latest,enable={{is_default_branch}}
 
-      # Create and push manifest for all PHP versions
+      - name: debug output
+        run: echo "TAGS=${{ steps.meta-manifest.outputs.tags }}"
+      
+      # Create and push manifest list for this PHP versions except on PRs
       - name: Create and push manifest list
+        if: github.event_name != 'pull_request'
         run: |
           # Get the base tag without PHP version suffix
           BASE_TAGS="${{ steps.meta-manifest.outputs.tags }}"
 
-          for BASE_TAG in $BASE_TAGS; do
-            echo "Creating manifest for: $BASE_TAG"
-
-            # Create manifest list with all PHP versions
-            docker manifest create $BASE_TAG \
-              ${BASE_TAG}-php8.1 \
-              ${BASE_TAG}-php8.2 \
-              ${BASE_TAG}-php8.3 \
-              ${BASE_TAG}-php8.4
-
-            # Push the manifest list
-            docker manifest push $BASE_TAG
-
-            echo "✅ Created manifest: $BASE_TAG"
-          done
+          #if [ "${{ matrix.php-version }}" = "${{ env.PHP_VERSION_LATEST }}" ]; then
+          #  # Also create manifest for the "latest" tag without PHP version suffix
+          #  docker manifest create ${BASE_TAGS} ${BASE_TAGS}-php${{ matrix.php-version }}
+          #else
+          #  docker manifest create ${BASE_TAGS}-php${{ matrix.php-version }}
+          #fi 
