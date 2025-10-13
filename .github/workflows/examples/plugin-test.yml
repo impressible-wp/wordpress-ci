@@ -1,0 +1,47 @@
+name: Example WordPress Plugin Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test Plugin
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+        wordpress-version: ['6.3', '6.4', 'latest']
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Test WordPress Plugin
+        uses: impressible-wp/wordpress-plugin-ci@v1
+        with:
+          plugin-path: './myplugin'
+          php-version: ${{ matrix.php-version }}
+          wordpress-version: ${{ matrix.wordpress-version }}
+          setup-script: |
+            composer install --no-dev --prefer-dist
+            if [ -f "package.json" ]; then
+              npm ci
+              npm run build
+            fi
+          test-command: |
+            composer run-script test:syntax
+            composer run-script test:unit
+            composer run-script test:integration
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-php${{ matrix.php-version }}-wp${{ matrix.wordpress-version }}
+          path: |
+            tests/reports/
+            coverage/

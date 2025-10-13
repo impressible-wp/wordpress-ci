@@ -1,0 +1,39 @@
+name: 'WordPress Plugin CI'
+description: 'Run PHP tests in a pre-installed and pre-configured WordPress plugin environment'
+author: 'Koala Yeung <koalay@gmail.com>'
+
+branding:
+  icon: 'check-circle'
+  color: 'green'
+
+inputs:
+  plugin-path:
+    description: 'Path to the WordPress plugin directory'
+    required: true
+    default: '.'
+  php-version:
+    description: 'PHP version to use for testing'
+    required: false
+    default: '8.1'
+  wordpress-version:
+    description: 'WordPress version to use for testing'
+    required: false
+    default: 'latest'
+  test-command:
+    description: 'Command to run the tests'
+    required: false
+    default: 'composer test'
+  setup-script:
+    description: 'Optional setup script to run before tests'
+    required: false
+    default: ''
+
+outputs:
+  status:
+    description: 'Test execution status (success, failure, error)'
+  test-results:
+    description: 'Output from the test execution'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
