@@ -1,6 +1,9 @@
+# Allow to override what PHP version image to base on
 ARG PHP_VERSION=8.1
-ARG WORDPRESS_VERSION=latest
 FROM docker.io/library/php:${PHP_VERSION}-apache
+
+# Allow to override what WordPress version to install
+ARG WORDPRESS_VERSION=latest
 
 # Run everything in a plugin folder
 WORKDIR /var/www/html/wp-content/plugins/myplugin
