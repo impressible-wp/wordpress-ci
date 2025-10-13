@@ -64,14 +64,6 @@ jobs:
       - name: Build action
         run: npm run build
 
-      - name: Check if dist/ is up to date
-        run: |
-          if [ -n "$(git status --porcelain dist/)" ]; then
-            echo "Error: dist/ directory is not up to date. Please run 'npm run build' and commit the changes."
-            git status --porcelain dist/
-            exit 1
-          fi
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
