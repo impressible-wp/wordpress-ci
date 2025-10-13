@@ -21,27 +21,7 @@ fi
 # You may simply delete and overwrite the config if you want.
 if [ ! -f /var/www/html/wp-config.php ]; then
     echo "Setting up wp-config.php..."
-
-    # Build the docker-specific wp-config file
-    # from wp-config-docker.php
-    #
-    # Patch the wp-config.php to dynamically get home and siteurl
-    # from $_SERVEFR['HTTP_HOST'] and $_SERVER['HTTPS'].
-    # Add to the line before "Sets up WordPress vars and included files."
-    CONFIG="/var/www/html/wp-config.php"
-    head --lines="-2" /var/www/html/wp-config-docker.php > $CONFIG
-    echo "" >> $CONFIG
-    echo "/**" >> $CONFIG
-    echo " * Dynamically set WP_HOME and WP_SITEURL" >> $CONFIG
-    echo " */" >> $CONFIG
-    echo "if ( isset( \$_SERVER['HTTP_HOST'] ) ) {" >> $CONFIG
-    echo "    \$host = \$_SERVER['HTTP_HOST'] ?? 'localhost';" >> $CONFIG
-    echo "    \$schema = isset( \$_SERVER['HTTPS'] ) && 'on' === \$_SERVER['HTTPS'] ? 'https' : 'http';" >> $CONFIG
-    echo "    define( 'WP_HOME', \$schema . '://' . \$host );" >> $CONFIG
-    echo "    define( 'WP_SITEURL', \$schema . '://' . \$host );" >> $CONFIG
-    echo "}" >> $CONFIG
-    echo "" >> $CONFIG
-    tail --lines="2" /var/www/html/wp-config-docker.php >> $CONFIG
+    cp -pdf /usr/src/wordpress/wp-config-docker.php /var/www/html/wp-config.php
 else
     echo "wp-config.php already exists in the Wordpress source, skipping setup."
 fi
@@ -74,7 +54,7 @@ cd /usr/src/wordpress
 
 # Run the original entrypoint with the current working directory mounted
 echo "Starting the original entrypoint script..."
-docker-entrypoint.sh $@
+docker-php-entrypoint $@
 
 # Remember the original return code
 RET=$?
