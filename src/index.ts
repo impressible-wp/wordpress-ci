@@ -4,21 +4,21 @@ import { runWordPressPluginTests } from './wordpress-plugin-ci';
 /**
  * Main entry point for the GitHub Action
  */
-async function run(): Promise<void> {
+async function run({actionCore = core} = {}): Promise<void> {
   try {
     // Get inputs from action.yml
-    const pluginPath = core.getInput('plugin-path', { required: true });
-    const phpVersion = core.getInput('php-version') || '8.1';
-    const wordpressVersion = core.getInput('wordpress-version') || 'latest';
-    const testCommand = core.getInput('test-command') || 'composer test';
-    const setupScript = core.getInput('setup-script') || '';
-    const usePrebuiltImage = core.getInput('use-prebuilt-image') === 'true';
-    
-    core.info(`Starting WordPress Plugin CI for plugin at: ${pluginPath}`);
-    core.info(`PHP Version: ${phpVersion}`);
-    core.info(`WordPress Version: ${wordpressVersion}`);
-    core.info(`Test Command: ${testCommand}`);
-    core.info(`Use Pre-built Image: ${usePrebuiltImage}`);
+    const pluginPath = actionCore.getInput('plugin-path', { required: true });
+    const phpVersion = actionCore.getInput('php-version') || '8.1';
+    const wordpressVersion = actionCore.getInput('wordpress-version') || 'latest';
+    const testCommand = actionCore.getInput('test-command') || 'composer test';
+    const setupScript = actionCore.getInput('setup-script') || '';
+    const usePrebuiltImage = actionCore.getInput('use-prebuilt-image') === 'true';
+
+    actionCore.info(`Starting WordPress Plugin CI for plugin at: ${pluginPath}`);
+    actionCore.info(`PHP Version: ${phpVersion}`);
+    actionCore.info(`WordPress Version: ${wordpressVersion}`);
+    actionCore.info(`Test Command: ${testCommand}`);
+    actionCore.info(`Use Pre-built Image: ${usePrebuiltImage}`);
 
     // Run the WordPress plugin tests
     const result = await runWordPressPluginTests({
@@ -31,18 +31,18 @@ async function run(): Promise<void> {
     });
 
     if (result.success) {
-      core.info('✅ WordPress plugin tests completed successfully');
-      core.setOutput('status', 'success');
-      core.setOutput('test-results', result.output);
+      actionCore.info('✅ WordPress plugin tests completed successfully');
+      actionCore.setOutput('status', 'success');
+      actionCore.setOutput('test-results', result.output);
     } else {
-      core.setFailed(`❌ WordPress plugin tests failed: ${result.error}`);
-      core.setOutput('status', 'failure');
-      core.setOutput('test-results', result.output);
+      actionCore.setFailed(`❌ WordPress plugin tests failed: ${result.error}`);
+      actionCore.setOutput('status', 'failure');
+      actionCore.setOutput('test-results', result.output);
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    core.setFailed(`Action failed with error: ${errorMessage}`);
-    core.setOutput('status', 'error');
+    actionCore.setFailed(`Action failed with error: ${errorMessage}`);
+    actionCore.setOutput('status', 'error');
   }
 }
 
