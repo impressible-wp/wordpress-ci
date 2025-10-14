@@ -33,24 +33,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Only Build the image
+      - name: Build and push the image with only sha tag
         if: github.event_name == 'pull_request'
         run: |
+          echo "Login to GitHub Container Registry"
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
           echo "Building Docker image for PHP ${{ matrix.php-version }} with WordPress ${{ matrix.wordpress-version }}"
 
-          docker buildx build --load \
+          ARGS=( \
             --platform linux/amd64 \
             --file ./docker/Dockerfile \
             --build-arg PHP_VERSION=${{ matrix.php-version }} \
             --build-arg WORDPRESS_VERSION=${{ matrix.wordpress-version }} \
-            --tag $IMAGE_NAME:php${{ matrix.php-version }} \
-            ./docker
+            --tag $REGISTRY/$IMAGE_NAME:sha256-${{ github.sha }}-php${{ matrix.php-version }} \
+          )
+
+          if [[ "${{ matrix.php-version }}" == "${{ env.PHP_LATEST }}" ]]; then
+            ARGS+=( --tag $REGISTRY/$IMAGE_NAME:sha256-${{ github.sha }}-latest )
+          fi
+
+          echo "Building Docker image with the following arguments:"
+          printf '%s\n' "${ARGS[@]}"
+
+          docker buildx build --push "${ARGS[@]}" ./docker
 
       - name: Build and push the image
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
+          echo "Login to GitHub Container Registry"
           echo ${{ secrets.GITHUB_TOKEN }} | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
-          REF_NAME=${{ github.ref_name }}
 
           ARGS=( \
             --platform linux/amd64 \
@@ -58,7 +69,7 @@ jobs:
             --build-arg PHP_VERSION=${{ matrix.php-version }} \
             --build-arg WORDPRESS_VERSION=${{ matrix.wordpress-version }} \
             --tag $REGISTRY/$IMAGE_NAME:php${{ matrix.php-version }} \
-            --tag $REGISTRY/$IMAGE_NAME:sha-${{ github.sha }} \
+            --tag $REGISTRY/$IMAGE_NAME:sha256-${{ github.sha }}-php${{ matrix.php-version }} \
           )
 
           if [[ "${{ matrix.php-version }}" == "${{ env.PHP_LATEST }}" ]]; then
@@ -68,7 +79,7 @@ jobs:
           echo "Building Docker image with the following arguments:"
           printf '%s\n' "${ARGS[@]}"
 
-          docker buildx build --push "${ARGS[@]}" ./
+          docker buildx build --push "${ARGS[@]}" ./docker
 
   run-acceptance-tests:
     name: Acceptance Tests
@@ -76,3 +87,6 @@ jobs:
     uses: ./.github/workflows/acceptance.yml
     with:
       build_result: ${{ needs.build.result }}
+      registry: ghcr.io
+      image_name: ${{ github.repository }}
+      image_tag: sha256-${{ github.sha }}-latest
