@@ -49,6 +49,6 @@ temp/
 *~
 
 # Distribution files
-/dist/
+/dist/*
 !/dist/index.js
 !/dist/licenses.txt
