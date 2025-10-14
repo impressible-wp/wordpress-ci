@@ -1,0 +1,14 @@
+name: 'WordPress Plugin CI'
+description: 'WordPress Plugin or Theme CI environment'
+author: 'Impressible'
+inputs:
+  myInput:
+    description: 'Input to use'
+    required: true
+    default: 'default value'
+outputs:
+  time:
+    description: 'The time we greeted you'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
