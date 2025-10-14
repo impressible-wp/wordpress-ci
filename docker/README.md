@@ -44,12 +44,14 @@ unattained Wordpress installation:
 
 ### For Database Connection
 
-- `WORDPRESS_DB_HOST`: The hostname of database server to use.
-- `WORDPRESS_DB_NAME`: The database name to connect to.
-- `WORDPRESS_DB_USER`: The database username for login.
-- `WORDPRESS_DB_PASSWORD`: The database password for login.
-- `WORDPRESS_DB_CHARSET`: The database character set to use.
-- `WORDPRESS_DB_COLLATE`: The database collate type.
+- `WORDPRESS_DB_HOST`: The hostname of database server to use (default: "mysql").
+- `WORDPRESS_DB_NAME`: The database name to connect to use (default: "wordpress").
+- `WORDPRESS_DB_USER`: The database username for login (default: "username").
+- `WORDPRESS_DB_PASSWORD`: The database password for login (default: "password").
+- `WORDPRESS_DB_CHARSET`: The database character set to use (default: "utf8mb4").
+- `WORDPRESS_DB_COLLATE`: The database collate type (default: "").
+
+(See: [wp-config-docker.php](wp-config-docker.php))
 
 ### For Unattended Wordpress Setup
 

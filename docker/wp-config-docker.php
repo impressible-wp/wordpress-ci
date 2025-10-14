@@ -2,7 +2,7 @@
 /**
  * Docker-specific wp-config.php from Docker's official Wordpress image project
  * with minor modifications to work better in this context.
- * 
+ *
  * @link https://raw.githubusercontent.com/docker-library/wordpress/refs/heads/master/wp-config-docker.php
  * @link https://github.com/impressible-wp/wordpress-plugin-ci
  */
@@ -52,15 +52,16 @@ if (!function_exists('getenv_docker')) {
 define( 'DB_NAME', getenv_docker('WORDPRESS_DB_NAME', 'wordpress') );
 
 /** Database username */
-define( 'DB_USER', getenv_docker('WORDPRESS_DB_USER', 'example username') );
+define( 'DB_USER', getenv_docker('WORDPRESS_DB_USER', 'username') );
 
 /** Database password */
-define( 'DB_PASSWORD', getenv_docker('WORDPRESS_DB_PASSWORD', 'example password') );
+define( 'DB_PASSWORD', getenv_docker('WORDPRESS_DB_PASSWORD', 'password') );
 
 /**
- * Docker image fallback values above are sourced from the official WordPress installation wizard:
- * https://github.com/WordPress/WordPress/blob/1356f6537220ffdc32b9dad2a6cdbe2d010b7a88/wp-admin/setup-config.php#L224-L238
- * (However, using "example username" and "example password" in your database is strongly discouraged.  Please use strong, random credentials!)
+ * Note: The default "username" and "password" are only for development and testing.
+ *
+ * Using "username" and "password" in your production database is strongly discouraged.
+ * If you intended to use this in production, please update them to appropriate values.
  */
 
 /** Database hostname */
@@ -145,10 +146,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Dynamically set WP_HOME and WP_SITEURL
- * 
+ *
  * This is useful in a container environment where the host may not be known ahead of time.
  * Added by the "wp-plugin-ci" project.
- * 
+ *
  * @link https://github.com/impressible-wp/wordpress-plugin-ci
  */
 if ( isset( $_SERVER['HTTP_HOST'] ) ) {
