@@ -6,7 +6,7 @@ FROM docker.io/library/php:${PHP_VERSION}-apache
 ARG WORDPRESS_VERSION=latest
 
 # Run everything in a plugin folder
-WORKDIR /var/www/html/wp-content/plugins/myplugin
+WORKDIR /var/www/html/wp-content
 
 # Copy the proxy entrypoint script and properly set permissions
 COPY docker-entrypoint.sh /usr/local/bin/
