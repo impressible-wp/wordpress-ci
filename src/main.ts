@@ -11,7 +11,7 @@ export function run(): void {
     core.debug(`Working directory is: ${workdir}`)
 
     const testCommand = core.getInput('test-command')
-    core.debug(`Input was: ${testCommand}`)
+    core.debug(`Test command was: ${testCommand}`)
 
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)

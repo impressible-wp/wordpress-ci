@@ -20,8 +20,10 @@ describe('action', () => {
     // Set the action's inputs as return values from core.getInput()
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
-        case 'myInput':
-          return 'test input'
+        case 'workdir':
+          return '/github/workspace'
+        case 'test-command':
+          return 'test command'
         default:
           return ''
       }
@@ -29,7 +31,12 @@ describe('action', () => {
 
     run()
 
-    expect(mockCore.debug).toHaveBeenCalledWith('Input was: test input')
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      'Working directory is: /github/workspace'
+    )
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      'Test command was: test command'
+    )
     expect(mockCore.setOutput).toHaveBeenCalledWith('time', expect.any(String))
   })
 
