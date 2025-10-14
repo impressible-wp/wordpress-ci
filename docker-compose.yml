@@ -5,7 +5,7 @@ services:
     build:
       image: wp-plugin-ci:${PHP_VERSION:-8.1}
       context: ./docker
-      dockerfile: ./docker/Dockerfile
+      dockerfile: ./Dockerfile
       args:
         PHP_VERSION: ${PHP_VERSION:-8.1}
     container_name: wp-plugin-ci
@@ -17,10 +17,10 @@ services:
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
     volumes:
-      - ./myplugin:./plugins/myplugin
-      - ./mytheme:./themes/mytheme
+      - ./example/myplugin:/var/www/html/wp-content/plugins/myplugin
+      - ./example/mytheme:/var/www/html/wp-content/themes/mytheme
     ports:
-      - "8080:80"
+      - '8080:80'
     networks:
       - network
 
@@ -34,7 +34,7 @@ services:
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
     ports:
-      - "3306:3306"
+      - '3306:3306'
     networks:
       - network
 
