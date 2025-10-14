@@ -28,8 +28,15 @@ fi
 
 # Check if database is up and running before continuing.
 echo "Waiting for database to be ready..."
+TIMEOUT=90
+COUNTDOWN=$TIMEOUT
 while ! wp db check --allow-root --quiet; do
     sleep 1
+    COUNTDOWN=$((COUNTDOWN - 1))
+    if [ $COUNTDOWN -le 0 ]; then
+        echo "Database is not ready after ${TIMEOUT_SETTING} seconds, exiting."
+        exit 1
+    fi
 done
 
 # Check if Wordpress is already installed.
