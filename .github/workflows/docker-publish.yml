@@ -68,4 +68,11 @@ jobs:
           echo "Building Docker image with the following arguments:"
           printf '%s\n' "${ARGS[@]}"
 
-          docker buildx build --push "${ARGS[@]}" ./docker
+          docker buildx build --push "${ARGS[@]}" ./
+
+  run-acceptance-tests:
+    name: Acceptance Tests
+    needs: build
+    uses: ./.github/workflows/acceptance.yml
+    with:
+      build_result: ${{ needs.build.result }}
