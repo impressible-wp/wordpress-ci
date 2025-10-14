@@ -1,20 +1,19 @@
-name: Docker
+name: Docker Publish
 
 on:
   schedule:
     - cron: '35 4 * * *'
   push:
-    branches: [ "main" ]
+    branches: ['main']
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
+    tags: ['v*.*.*']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   PHP_LATEST: 8.4
-
 
 jobs:
   build:
@@ -47,7 +46,7 @@ jobs:
             --tag $IMAGE_NAME:php${{ matrix.php-version }} \
             ./docker
 
-      - name:  Build and push the image
+      - name: Build and push the image
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login $REGISTRY -u ${{ github.actor }} --password-stdin

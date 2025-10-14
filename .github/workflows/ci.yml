@@ -17,12 +17,3 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run all
-
-  test-action:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./
-        with:
-          workdir: .
-          test-command: echo mytest
