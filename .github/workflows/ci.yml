@@ -24,4 +24,5 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./
         with:
-          myInput: 'test'
+          workdir: .
+          test-command: echo mytest
