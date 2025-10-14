@@ -42,7 +42,7 @@ RUN docker-php-ext-install gd mbstring pdo pdo_mysql mysqli zip
 # Properly label the image
 LABEL org.opencontainers.image.title="Wordpress Plugin CI (php${PHP_VERSION})"
 LABEL org.opencontainers.image.authors="Koala Yeung <koala@example.com>"
-LABEL org.opencontainers.image.url="https://github.com/impressible-wp/wordpress-plugin-ci/tree/main/docker"
+LABEL org.opencontainers.image.url="https://github.com/orgs/impressible-wp/packages/container/package/wordpress-plugin-ci"
 LABEL org.opencontainers.image.source="https://github.com/impressible-wp/wordpress-plugin-ci/tree/main/docker"
 LABEL org.opencontainers.image.version="php${PHP_VERSION}"
 LABEL org.opencontainers.image.description="A Docker image for WordPress plugin development with WordPress ${WORDPRESS_VERSION} and PHP ${PHP_VERSION}"
