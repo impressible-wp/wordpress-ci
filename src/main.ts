@@ -7,8 +7,11 @@ import * as github from '@actions/github'
  */
 export function run(): void {
   try {
-    const myInput = core.getInput('myInput')
-    core.debug(`Input was: ${myInput}`)
+    const workdir = core.getInput('workdir')
+    core.debug(`Working directory is: ${workdir}`)
+
+    const testCommand = core.getInput('test-command')
+    core.debug(`Input was: ${testCommand}`)
 
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)

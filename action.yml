@@ -2,13 +2,14 @@ name: 'WordPress Plugin CI'
 description: 'WordPress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
-  myInput:
-    description: 'Input to use'
+  workdir:
+    description: 'Working directory'
+    required: false
+    default: '.'
+  test-command:
+    description: 'Command to use to run tests'
     required: true
-    default: 'default value'
-outputs:
-  time:
-    description: 'The time we greeted you'
+    default: 'echo "No test command specified"'
 runs:
   using: 'node20'
   main: 'dist/index.js'
