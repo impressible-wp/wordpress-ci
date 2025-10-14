@@ -126,6 +126,15 @@ After setup completion, you can now:
 ## Usage
 
 ```yaml
+- uses: shogo82148/actions-setup-mysql@v1
+  with:
+    mysql-version: mariadb-11.7
+    user: username
+    password: password
+- name: Create database
+  run: |
+    mysql -uroot -e 'CREATE DATABASE wordpress'
+    mysql -uroot -e 'GRANT ALL ON wordpress to username'
 - uses: impressible-wp/wordpress-plugin-ci@v1
   with:
     myInput: 'your-value'
