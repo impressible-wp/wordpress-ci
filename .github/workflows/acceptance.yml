@@ -51,7 +51,9 @@ jobs:
           network: ${{ job.services.mysql.network }}
           plugins: ./example/myplugin
           themes: ./example/mytheme
-          test-command: echo mytest
+          test-command: |
+            composer install
+            composer run test
           test-command-context: ./example/myplugin
 
       - name: Test My Theme
@@ -63,5 +65,7 @@ jobs:
           network: ${{ job.services.mysql.network }}
           plugins: ./example/myplugin
           themes: ./example/mytheme
-          test-command: echo mytest
+          test-command: |
+            composer install
+            composer run test
           test-command-context: ./example/mytheme

@@ -9,6 +9,9 @@
             "email": "koalay@gmail.com"
         }
     ],
+    "scripts": {
+        "test": "echo test"
+    },
     "require-dev": {
         "codeception/codeception": "^5.3"
     }
