@@ -45,4 +45,4 @@ temp/
 !/dist/index.js
 !/dist/index.js.map
 !/dist/licenses.txt
-!/dist/sourcemap-register.js
+!/dist/sourcemap-register.*
