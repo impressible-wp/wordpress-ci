@@ -40,9 +40,13 @@ describe('action', () => {
     })
 
     const mockEnsureContainerRunning = jest.fn()
+    const mockGetContent = jest
+      .fn()
+      .mockReturnValue('<html>Mocked Content</html>')
 
     run({
-      _ensureContainerRunning: mockEnsureContainerRunning
+      _ensureContainerRunning: mockEnsureContainerRunning,
+      _getContent: mockGetContent
     })
 
     // Assert the inputs
@@ -94,9 +98,13 @@ describe('action', () => {
     })
 
     const mockEnsureContainerRunning = jest.fn()
+    const mockGetContent = jest
+      .fn()
+      .mockReturnValue('<html>Mocked Content</html>')
 
     run({
-      _ensureContainerRunning: mockEnsureContainerRunning
+      _ensureContainerRunning: mockEnsureContainerRunning,
+      _getContent: mockGetContent
     })
 
     // Assert the outputs and debug messages
@@ -114,10 +122,13 @@ describe('action', () => {
     })
 
     const mockEnsureContainerRunning = jest.fn()
+    const mockGetContent = jest
+      .fn()
+      .mockReturnValue('<html>Mocked Content</html>')
 
-    // Act
     run({
-      _ensureContainerRunning: mockEnsureContainerRunning
+      _ensureContainerRunning: mockEnsureContainerRunning,
+      _getContent: mockGetContent
     })
 
     // Assert

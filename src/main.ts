@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
+// import * as github from '@actions/github'
 import {exec, ExecException, execSync} from 'child_process'
 
 /**
@@ -92,7 +92,7 @@ function ensureContainerRunning(
     core.debug(`Container ${fullImageName} is not running. Starting it...`)
     const handle = _getCommandOutputHandler()
     exec(
-      `docker run -d --name ${fullImageName} ${fullImageName}`,
+      `docker run --detach --port 8080:80 --name "wordpress-ci" ${fullImageName}`,
       handle.callback
     )
   } else {
@@ -153,17 +153,29 @@ function _getCommandOutputHandler(): {
 }
 
 /**
+ * Get the content of a URL.
+ *
+ * @param url
+ * @returns
+ */
+function getContent(url: string): string {
+  return execSync(`curl -s ${url}`).toString()
+}
+
+/**
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
 export function run({
-  _ensureContainerRunning = ensureContainerRunning
+  _ensureContainerRunning = ensureContainerRunning,
+  _getContent = getContent
 }: {
   _ensureContainerRunning?: (
     registry: string,
     image_name: string,
     image_tag: string
   ) => void
+  _getContent?: (url: string) => string
 } = {}): void {
   const startTime = new Date().getTime()
   try {
@@ -177,8 +189,18 @@ export function run({
     )
 
     // Get the JSON webhook payload for the event that triggered the workflow
-    const payload = JSON.stringify(github.context.payload, undefined, 2)
-    core.info(`The event payload: ${payload}`)
+    // const payload = JSON.stringify(github.context.payload, undefined, 2)
+    // core.info(`The event payload: ${payload}`)
+
+    // Download the frontpage on localhost:8080
+    try {
+      const content = _getContent('http://localhost:8080')
+      core.debug(`Frontpage content: ${content}`)
+    } catch (error) {
+      core.error(`Error fetching frontpage: ${(error as Error).message}`)
+      core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
+      throw error
+    }
 
     core.setOutput('stdout', '')
     core.setOutput('stderr', '')

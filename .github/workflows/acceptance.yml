@@ -22,6 +22,8 @@ jobs:
     name: Example Action
     runs-on: ubuntu-latest
     env:
+      # The hostname should match the MySQL / MariaDB
+      # service name defined below
       WORDPRESS_DB_HOST: mysql
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: username
@@ -40,19 +42,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Check available commands
+        run: |
+          echo "Available commands:"
+          which curl
+          curl --version
+
       - name: Download the image to test
         run: |
           echo "Pulling image ${{ inputs.image_tag }} from GitHub Container Registry"
           docker pull ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
 
-      - name: Test My Plugin
-        uses: ./
-        with:
-          workdir: .
-          test-command: echo mytest
+      - name: Run the image to test
+        run: |
+          echo "Running Docker image"
+          docker run \
+            --detach \
+            --name wordpress-ci \
+            --network ${{ job.services.mysql.network }} \
+            -e WORDPRESS_DB_HOST=${{ env.WORDPRESS_DB_HOST }} \
+            -e WORDPRESS_DB_NAME=${{ env.WORDPRESS_DB_NAME }} \
+            -e WORDPRESS_DB_USER=${{ env.WORDPRESS_DB_USER }} \
+            -e WORDPRESS_DB_PASSWORD=${{ env.WORDPRESS_DB_PASSWORD }} \
+            --publish 8080:80 \
+            ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
 
-      - name: Test My Theme
-        uses: ./
-        with:
-          workdir: .
-          test-command: echo mytest
+      - name: Test the WordPress site
+        run: |
+          SITE_URL="http://localhost:8080"
+          echo "Site URL: $SITE_URL"
+
+          echo "Wait for the web server to become available"
+          for i in {1..30}; do
+            if curl --silent --head ${SITE_URL} | grep "200 OK" > /dev/null; then
+              echo "Web server is up!"
+              break
+            else
+              echo "Waiting for the web server to be ready..."
+              sleep 5
+            fi
+          done
+
+          echo "Testing the WordPress site"
+          curl --silent --show-error --dump-header - --output - ${SITE_URL}
+
+      # - name: Test My Plugin
+      #   uses: ./
+      #   with:
+      #     workdir: .
+      #     test-command: echo mytest
+
+      # - name: Test My Theme
+      #   uses: ./
+      #   with:
+      #     workdir: .
+      #     test-command: echo mytest
