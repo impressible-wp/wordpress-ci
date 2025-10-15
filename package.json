@@ -1,7 +1,7 @@
 {
-  "name": "wordpress-plugin-ci",
+  "name": "wordpress-ci",
   "version": "1.0.0",
-  "description": "WordPress Plugin CI GitHub Action",
+  "description": "A GitHub Action for doing integration test and acceptance test with Wordpress",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/impressible-wp/wordpress-plugin-ci.git"
+    "url": "git+https://github.com/impressible-wp/wordpress-ci.git"
   },
   "keywords": [
     "actions",

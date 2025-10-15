@@ -1,6 +1,6 @@
-# WordPress Plugin CI
+# WordPress CI
 
-A GitHub Action for WordPress plugin continuous integration, testing, and deployment.
+A GitHub Action for WordPress plugin or theme continuous integration, testing, and deployment.
 
 ## TypeScript Development Setup
 
@@ -114,15 +114,6 @@ GitHub workflows are configured for:
 - The action uses Node.js 20 runtime
 - Source maps are generated for debugging
 
-## Getting Started
-
-After setup completion, you can now:
-
-1. Modify `src/main.ts` to implement your WordPress plugin CI logic
-2. Update `action.yml` with your specific inputs/outputs
-3. Add tests in `__tests__/`
-4. Use `npm run dev` for active development
-
 ## Usage
 
 ```yaml
@@ -135,7 +126,7 @@ After setup completion, you can now:
   run: |
     mysql -uroot -e 'CREATE DATABASE wordpress'
     mysql -uroot -e 'GRANT ALL ON wordpress to username'
-- uses: impressible-wp/wordpress-plugin-ci@v1
+- uses: impressible-wp/wordpress-ci@v1
   with:
     myInput: 'your-value'
 ```

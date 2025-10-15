@@ -1,5 +1,5 @@
-name: 'WordPress Plugin CI'
-description: 'WordPress Plugin or Theme CI environment'
+name: 'Wordpress CI'
+description: 'Wordpress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
   workdir:

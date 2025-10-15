@@ -4,7 +4,7 @@
  * with minor modifications to work better in this context.
  *
  * @link https://raw.githubusercontent.com/docker-library/wordpress/refs/heads/master/wp-config-docker.php
- * @link https://github.com/impressible-wp/wordpress-plugin-ci
+ * @link https://github.com/impressible-wp/wordpress-ci
  */
 
 /**
@@ -148,9 +148,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Dynamically set WP_HOME and WP_SITEURL
  *
  * This is useful in a container environment where the host may not be known ahead of time.
- * Added by the "wp-plugin-ci" project.
+ * Added by the "wordpress-ci" project.
  *
- * @link https://github.com/impressible-wp/wordpress-plugin-ci
+ * @link https://github.com/impressible-wp/wordpress-ci
  */
 if ( isset( $_SERVER['HTTP_HOST'] ) ) {
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';

@@ -1,4 +1,4 @@
-# WordPress Plugin CI Image
+# WordPress CI's Container Image
 
 This folder includes [config file](Dockerfile) to build a standardized Wordpress environment
 for CI testing.
@@ -55,7 +55,7 @@ unattained Wordpress installation:
 
 ### For Unattended Wordpress Setup
 
-- `WORDPRESS_TITLE`: The site title (default: "WordpressPluginCI").
+- `WORDPRESS_TITLE`: The site title (default: "WordpressCI").
 - `WORDPRESS_ADMIN_USER`: The admin user's username (default: "admin").
 - `WORDPRESS_ADMIN_PASSWORD`: The admin user password (default: "password").
 - `WORDPRESS_ADMIN_EMAIL`: The admin user's email address (default: "user@example.com").

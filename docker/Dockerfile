@@ -2,7 +2,7 @@
 ARG PHP_VERSION=8.1
 FROM docker.io/library/php:${PHP_VERSION}-apache
 
-# Allow to override what WordPress version to install
+# Allow to override what Wordpress version to install
 ARG WORDPRESS_VERSION=latest
 
 # Run everything in a plugin folder
@@ -27,7 +27,7 @@ RUN curl -o - https://composer.github.io/installer.sha384sum | sha384sum --check
 RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 RUN php -r "unlink('composer-setup.php');"
 
-# Download the latest WordPress core to the source folder
+# Download the latest Wordpress core to the source folder
 RUN mkdir -p /usr/src/wordpress
 RUN wp core download --allow-root --path=/usr/src/wordpress --version=${WORDPRESS_VERSION}
 COPY wp-config-docker.php /usr/src/wordpress/wp-config-docker.php
@@ -40,12 +40,12 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install gd mbstring pdo pdo_mysql mysqli zip
 
 # Properly label the image
-LABEL org.opencontainers.image.title="Wordpress Plugin CI (php${PHP_VERSION})"
+LABEL org.opencontainers.image.title="Wordpress CI (php${PHP_VERSION})"
 LABEL org.opencontainers.image.authors="Koala Yeung <koala@example.com>"
-LABEL org.opencontainers.image.url="https://github.com/orgs/impressible-wp/packages/container/package/wordpress-plugin-ci"
-LABEL org.opencontainers.image.source="https://github.com/impressible-wp/wordpress-plugin-ci/tree/main/docker"
+LABEL org.opencontainers.image.url="https://github.com/orgs/impressible-wp/packages/container/package/wordpress-ci"
+LABEL org.opencontainers.image.source="https://github.com/impressible-wp/wordpress-ci/tree/main/docker"
 LABEL org.opencontainers.image.version="php${PHP_VERSION}"
-LABEL org.opencontainers.image.description="A Docker image for WordPress plugin development with WordPress ${WORDPRESS_VERSION} and PHP ${PHP_VERSION}"
+LABEL org.opencontainers.image.description="A Docker image for Wordpress development with Wordpress ${WORDPRESS_VERSION} and PHP ${PHP_VERSION}"
 LABEL org.opencontainers.image.licenses="MIT"
 
 # Use the proxy script to allow for custom entrypoints

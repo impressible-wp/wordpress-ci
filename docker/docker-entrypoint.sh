@@ -47,7 +47,7 @@ else
     echo "Wordpress is not installed yet. Using wp-cli to perform unattended installation..."
     wp core install \
         --url="http://localhost" \
-        --title="${WORDPRESS_TITLE:-WordpressPluginCI}" \
+        --title="${WORDPRESS_TITLE:-WordpressCI}" \
         --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
         --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
         --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
