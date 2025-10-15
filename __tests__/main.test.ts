@@ -21,11 +21,11 @@ describe('action', () => {
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
         case 'registry':
-          return 'ghcr.io'
+          return 'registry.io'
         case 'image_name':
-          return 'impressible-wp/wordpress-ci'
+          return 'some-vendor/image-name'
         case 'image_tag':
-          return 'latest'
+          return 'some-image-tag'
         case 'plugins':
           return './plugin1\n./plugin2'
         case 'themes':
@@ -39,14 +39,18 @@ describe('action', () => {
       }
     })
 
-    run()
+    const mockEnsureContainerRunning = jest.fn()
 
-    // Assert the outputs and debug messages
-    expect(mockCore.debug).toHaveBeenCalledWith('registry: ghcr.io')
+    run({
+      _ensureContainerRunning: mockEnsureContainerRunning
+    })
+
+    // Assert the inputs
+    expect(mockCore.debug).toHaveBeenCalledWith('registry: registry.io')
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'image_name: impressible-wp/wordpress-ci'
+      'image_name: some-vendor/image-name'
     )
-    expect(mockCore.debug).toHaveBeenCalledWith('image_tag: latest')
+    expect(mockCore.debug).toHaveBeenCalledWith('image_tag: some-image-tag')
     expect(mockCore.debug).toHaveBeenCalledWith(
       `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`
     )
@@ -55,6 +59,15 @@ describe('action', () => {
     )
     expect(mockCore.debug).toHaveBeenCalledWith('context: ./example')
     expect(mockCore.debug).toHaveBeenCalledWith('test-command: test command')
+
+    // Assert the container running function was called with correct params
+    expect(mockEnsureContainerRunning).toHaveBeenCalledWith(
+      'registry.io',
+      'some-vendor/image-name',
+      'some-image-tag'
+    )
+
+    // Assert the outputs
     expect(mockCore.setOutput).toHaveBeenCalledWith(
       'stdout',
       expect.any(String)
@@ -80,7 +93,11 @@ describe('action', () => {
       }
     })
 
-    run()
+    const mockEnsureContainerRunning = jest.fn()
+
+    run({
+      _ensureContainerRunning: mockEnsureContainerRunning
+    })
 
     // Assert the outputs and debug messages
     expect(mockCore.debug).toHaveBeenCalledWith(
@@ -96,8 +113,12 @@ describe('action', () => {
       throw new Error('Input error')
     })
 
+    const mockEnsureContainerRunning = jest.fn()
+
     // Act
-    run()
+    run({
+      _ensureContainerRunning: mockEnsureContainerRunning
+    })
 
     // Assert
     expect(mockCore.setFailed).toHaveBeenCalledWith('Input error')

@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import {exec, ExecException, execSync} from 'child_process'
 
 /**
  * Get the input values and form a configuration object
@@ -65,14 +66,115 @@ function getConfigs(): {
 }
 
 /**
+ * Make sure the container mentioned is running in the background.
+ *
+ * @param registry
+ * @param image_name
+ * @param image_tag
+ */
+function ensureContainerRunning(
+  registry: string,
+  image_name: string,
+  image_tag: string
+): void {
+  const fullImageName = `${registry}/${image_name}:${image_tag}`
+  core.debug(`Ensuring container ${fullImageName} is running...`)
+
+  // Using docker command, check if the container is running.
+  // If not, start the container in detached mode.
+  // This is a placeholder implementation.
+  // In a real implementation, you would use child_process to run docker commands.
+  const stdout = execSync(`docker ps -q -f "name=${fullImageName}"`)
+  core.debug(`docker ps result: ${stdout?.toString()}`)
+
+  // Run the container in the background
+  if (!stdout || stdout.toString().trim() === '') {
+    core.debug(`Container ${fullImageName} is not running. Starting it...`)
+    const handle = _getCommandOutputHandler()
+    exec(
+      `docker run -d --name ${fullImageName} ${fullImageName}`,
+      handle.callback
+    )
+  } else {
+    core.debug(`Container ${fullImageName} is already running.`)
+  }
+
+  core.debug(`Container ${fullImageName} is running.`)
+}
+
+/**
+ * Create a child process output handler.
+ *
+ * @returns An object containing a callback function and an output handle.
+ * The callback function captures the output of a command execution.
+ * The output handle contains the error, stdout, stderr, and a done flag.
+ * @see https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback
+ */
+function _getCommandOutputHandler(): {
+  callback: (
+    error: ExecException | null,
+    stdout: string,
+    stderr: string
+  ) => void
+  output: {
+    error: ExecException | null
+    stdout: string
+    stderr: string
+    done: boolean
+  }
+} {
+  const outputHandle = {
+    error: null as ExecException | null,
+    stdout: '',
+    stderr: '',
+    done: false
+  }
+  const handler = (
+    error: ExecException | null,
+    stdout: string,
+    stderr: string
+  ): void => {
+    if (error) {
+      outputHandle.error = error
+    }
+    if (stdout) {
+      outputHandle.stdout = stdout
+    }
+    if (stderr) {
+      outputHandle.stderr = stderr
+    }
+    outputHandle.done = true
+  }
+
+  return {
+    callback: handler,
+    output: outputHandle
+  }
+}
+
+/**
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-export function run(): void {
+export function run({
+  _ensureContainerRunning = ensureContainerRunning
+}: {
+  _ensureContainerRunning?: (
+    registry: string,
+    image_name: string,
+    image_tag: string
+  ) => void
+} = {}): void {
   const startTime = new Date().getTime()
   try {
     const configs = getConfigs()
     core.debug(`Test command was: ${configs.testCommand}`)
+
+    _ensureContainerRunning(
+      configs.registry,
+      configs.image_name,
+      configs.image_tag
+    )
 
     // Get the JSON webhook payload for the event that triggered the workflow
     const payload = JSON.stringify(github.context.payload, undefined, 2)
