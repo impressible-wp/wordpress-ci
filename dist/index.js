@@ -25644,18 +25644,25 @@ function getConfigs() {
  * @param {string[]} cmd - The command to execute.
  * @returns {Promise<{stdout: string, stderr: string}>}
  */
-async function _exec(cmd) {
+async function _exec(cmd, options = {
+    logStdout: true,
+    logStderr: true
+}) {
     return new Promise((resolve, reject) => {
         const subprocess = (0,child_process__WEBPACK_IMPORTED_MODULE_1__.exec)(cmd.join(' '));
         let stdout = '';
         let stderr = '';
         subprocess?.stdout?.on('data', (data) => {
             stdout += data;
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
+            if (options.logStdout) {
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
+            }
         });
         subprocess?.stderr?.on('data', (data) => {
             stderr += data;
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
+            if (options.logStderr) {
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
+            }
         });
         subprocess.on('exit', code => {
             if (code === 0) {
@@ -25735,9 +25742,10 @@ async function _waitForHttpServer(url, timeout) {
     // eslint-disable-next-line no-constant-condition
     while (true) {
         try {
-            const result = await _exec([
-                `curl -s -o /dev/null -w "%{http_code}" ${url}`
-            ]);
+            const result = await _exec([`curl -s -o /dev/null -w "%{http_code}" ${url}`], {
+                logStdout: false,
+                logStderr: false
+            });
             if (result.stdout.trim() !== '000') {
                 return;
             }

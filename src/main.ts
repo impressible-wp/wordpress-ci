@@ -81,18 +81,31 @@ function getConfigs(): {
  * @param {string[]} cmd - The command to execute.
  * @returns {Promise<{stdout: string, stderr: string}>}
  */
-async function _exec(cmd: string[]): Promise<{stdout: string; stderr: string}> {
+async function _exec(
+  cmd: string[],
+  options: {
+    logStdout: boolean
+    logStderr: boolean
+  } = {
+    logStdout: true,
+    logStderr: true
+  }
+): Promise<{stdout: string; stderr: string}> {
   return new Promise((resolve, reject) => {
     const subprocess = exec(cmd.join(' '))
     let stdout = ''
     let stderr = ''
     subprocess?.stdout?.on('data', (data: string) => {
       stdout += data
-      core.info(data.trim())
+      if (options.logStdout) {
+        core.info(data.trim())
+      }
     })
     subprocess?.stderr?.on('data', (data: string) => {
       stderr += data
-      core.info(data.trim())
+      if (options.logStderr) {
+        core.info(data.trim())
+      }
     })
     subprocess.on('exit', code => {
       if (code === 0) {
@@ -189,9 +202,13 @@ async function _waitForHttpServer(url: string, timeout: number): Promise<void> {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      const result = await _exec([
-        `curl -s -o /dev/null -w "%{http_code}" ${url}`
-      ])
+      const result = await _exec(
+        [`curl -s -o /dev/null -w "%{http_code}" ${url}`],
+        {
+          logStdout: false,
+          logStderr: false
+        }
+      )
       if (result.stdout.trim() !== '000') {
         return
       }
