@@ -53,23 +53,24 @@ jobs:
           echo "Pulling image ${{ inputs.image_tag }} from GitHub Container Registry"
           docker pull ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
 
-      - name: Run the image to test
-        run: |
-          echo "Running Docker image"
-          docker run \
-            --detach \
-            --name="wordpress-ci" \
-            --network="${{ job.services.mysql.network }}" \
-            --env="WORDPRESS_DB_HOST=${{ env.WORDPRESS_DB_HOST }}" \
-            --env="WORDPRESS_DB_NAME=${{ env.WORDPRESS_DB_NAME }}" \
-            --env="WORDPRESS_DB_USER=${{ env.WORDPRESS_DB_USER }}" \
-            --env="WORDPRESS_DB_PASSWORD=${{ env.WORDPRESS_DB_PASSWORD }}" \
-            --publish="8080:80" \
-            ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
+      # - name: Run the image to test
+      #   run: |
+      #     echo "Running Docker image"
+      #     docker run \
+      #       --detach \
+      #       --name="wordpress-ci" \
+      #       --network="${{ job.services.mysql.network }}" \
+      #       --env="WORDPRESS_DB_HOST=${{ env.WORDPRESS_DB_HOST }}" \
+      #       --env="WORDPRESS_DB_NAME=${{ env.WORDPRESS_DB_NAME }}" \
+      #       --env="WORDPRESS_DB_USER=${{ env.WORDPRESS_DB_USER }}" \
+      #       --env="WORDPRESS_DB_PASSWORD=${{ env.WORDPRESS_DB_PASSWORD }}" \
+      #       --publish="8080:80" \
+      #       ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
 
       - name: Test My Plugin
         uses: ./
         with:
+          network: ${{ job.services.mysql.network }}
           test-command: echo mytest
 
       # - name: Test My Theme

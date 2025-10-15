@@ -34,10 +34,12 @@ describe('action', () => {
       switch (name) {
         case 'registry':
           return 'registry.io'
-        case 'image_name':
+        case 'image-name':
           return 'some-vendor/image-name'
-        case 'image_tag':
+        case 'image-tag':
           return 'some-image-tag'
+        case 'network':
+          return 'some-network'
         case 'plugins':
           return './plugin1\n./plugin2'
         case 'themes':
@@ -57,9 +59,10 @@ describe('action', () => {
     // Assert the inputs
     expect(mockCore.debug).toHaveBeenCalledWith('registry: registry.io')
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'image_name: some-vendor/image-name'
+      'image-name: some-vendor/image-name'
     )
-    expect(mockCore.debug).toHaveBeenCalledWith('image_tag: some-image-tag')
+    expect(mockCore.debug).toHaveBeenCalledWith('image-tag: some-image-tag')
+    expect(mockCore.debug).toHaveBeenCalledWith('network: some-network')
     expect(mockCore.debug).toHaveBeenCalledWith(
       `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`
     )
@@ -73,7 +76,8 @@ describe('action', () => {
     expect(mockRunEnv.ensureContainerRunning).toHaveBeenCalledWith(
       'registry.io',
       'some-vendor/image-name',
-      'some-image-tag'
+      'some-image-tag',
+      'some-network'
     )
 
     // Assert the outputs
@@ -97,6 +101,8 @@ describe('action', () => {
           return ''
         case 'context':
           return ''
+        case 'network':
+          return 'some-network' // network must be set
         default:
           return ''
       }

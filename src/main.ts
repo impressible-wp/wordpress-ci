@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 // import * as github from '@actions/github'
-import {exec, ExecException, execSync} from 'child_process'
+import {exec, execSync} from 'child_process'
 
 /**
  * Get the input values and form a configuration object
@@ -10,6 +10,7 @@ import {exec, ExecException, execSync} from 'child_process'
  * @property {string} registry - The container registry.
  * @property {string} image_name - The name of the image.
  * @property {string} image_tag - The tag of the image.
+ * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
  * @property {string} context - The build context path.
@@ -19,6 +20,7 @@ function getConfigs(): {
   registry: string
   image_name: string
   image_tag: string
+  network: string
   plugins: string[]
   themes: string[]
   context: string
@@ -26,10 +28,16 @@ function getConfigs(): {
 } {
   const registry = core.getInput('registry').trim()
   core.debug(`registry: ${registry}`)
-  const image_name = core.getInput('image_name').trim()
-  core.debug(`image_name: ${image_name}`)
-  const image_tag = core.getInput('image_tag').trim()
-  core.debug(`image_tag: ${image_tag}`)
+  const image_name = core.getInput('image-name').trim()
+  core.debug(`image-name: ${image_name}`)
+  const image_tag = core.getInput('image-tag').trim()
+  core.debug(`image-tag: ${image_tag}`)
+
+  const network = core.getInput('network').trim()
+  core.debug(`network: ${network}`)
+  if (network === '') {
+    throw new Error('The network input must be provided and not be empty.')
+  }
 
   const pluginsStr = core.getInput('plugins').trim()
   const plugins = pluginsStr
@@ -58,11 +66,49 @@ function getConfigs(): {
     registry,
     image_name,
     image_tag,
+    network,
     plugins,
     themes,
     context,
     testCommand
   }
+}
+
+/**
+ * A simple function to execute command and pipe outputs
+ * to core.
+ *
+ * @param {string[]} cmd - The command to execute.
+ * @returns {Promise<{stdout: string, stderr: string}>}
+ */
+async function _exec(cmd: string[]): Promise<{stdout: string; stderr: string}> {
+  return new Promise((resolve, reject) => {
+    const subprocess = exec(cmd.join(' '))
+    let stdout = ''
+    let stderr = ''
+    subprocess?.stdout?.on('data', (data: string) => {
+      stdout += data
+      core.info(data.trim())
+    })
+    subprocess?.stderr?.on('data', (data: string) => {
+      stderr += data
+      core.info(data.trim())
+    })
+    subprocess.on('exit', code => {
+      if (code === 0) {
+        resolve({
+          stdout,
+          stderr
+        })
+      } else {
+        reject(
+          new Error(
+            `Command failed: ${cmd.join(' ')}\nExit code: ${code}\nError: ${stderr}`
+          )
+        )
+      }
+    })
+  })
 }
 
 /**
@@ -72,110 +118,91 @@ function getConfigs(): {
  * @param image_name
  * @param image_tag
  */
-function _ensureContainerRunning(
+async function _ensureContainerRunning(
   registry: string,
   image_name: string,
-  image_tag: string
-): void {
+  image_tag: string,
+  network: string
+): Promise<{stdout: string; stderr: string}> {
   const fullImageName = `${registry}/${image_name}:${image_tag}`
   core.debug(`Ensuring container ${fullImageName} is running...`)
+
+  // Get variables from environment
+  const wordpressDbHost = process.env['WORDPRESS_DB_HOST'] || 'mysql'
+  const wordpressDbName = process.env['WORDPRESS_DB_NAME'] || 'wordpress'
+  const wordpressDbUser = process.env['WORDPRESS_DB_USER'] || 'wordpress'
+  const wordpressDbPassword =
+    process.env['WORDPRESS_DB_PASSWORD'] || 'wordpress'
 
   // Using docker command, check if the container is running.
   // If not, start the container in detached mode.
   // This is a placeholder implementation.
   // In a real implementation, you would use child_process to run docker commands.
-  const stdout = execSync(`docker ps -q -f "name=${fullImageName}"`)
-  core.debug(`docker ps result: ${stdout?.toString()}`)
+  const {stdout} = await _exec([
+    'docker',
+    'ps',
+    '--quiet',
+    '--filter',
+    `name="${fullImageName}"`
+  ])
+  core.debug(`docker ps result: ${stdout}`)
 
   // Run the container in the background
   if (!stdout || stdout.toString().trim() === '') {
     core.debug(`Container ${fullImageName} is not running. Starting it...`)
-    const handle = _getCommandOutputHandler()
-    exec(
-      `docker run --detach --port 8080:80 --name "wordpress-ci" ${fullImageName}`,
-      handle.callback
-    )
+    const cmd = [
+      'docker',
+      'run',
+      '--detach',
+      '--name="wordpress-ci"',
+      '--publish="8080:80"',
+      `--env="WORDPRESS_DB_HOST=${wordpressDbHost}"`,
+      `--env="WORDPRESS_DB_NAME=${wordpressDbName}"`,
+      `--env="WORDPRESS_DB_USER=${wordpressDbUser}"`,
+      `--env="WORDPRESS_DB_PASSWORD=${wordpressDbPassword}"`,
+      `--network=${network}`,
+      fullImageName
+    ]
+
+    // eslint-disable-next-line no-console
+    console.log(`Starting container by command: ${cmd.join(' ')}`)
+
+    return _exec(cmd)
   } else {
     core.debug(`Container ${fullImageName} is already running.`)
-  }
-
-  core.debug(`Container ${fullImageName} is running.`)
-}
-
-/**
- * Create a child process output handler.
- *
- * @returns An object containing a callback function and an output handle.
- * The callback function captures the output of a command execution.
- * The output handle contains the error, stdout, stderr, and a done flag.
- * @see https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback
- */
-function _getCommandOutputHandler(): {
-  callback: (
-    error: ExecException | null,
-    stdout: string,
-    stderr: string
-  ) => void
-  output: {
-    error: ExecException | null
-    stdout: string
-    stderr: string
-    done: boolean
-  }
-} {
-  const outputHandle = {
-    error: null as ExecException | null,
-    stdout: '',
-    stderr: '',
-    done: false
-  }
-  const handler = (
-    error: ExecException | null,
-    stdout: string,
-    stderr: string
-  ): void => {
-    if (error) {
-      outputHandle.error = error
-    }
-    if (stdout) {
-      outputHandle.stdout = stdout
-    }
-    if (stderr) {
-      outputHandle.stderr = stderr
-    }
-    outputHandle.done = true
-  }
-
-  return {
-    callback: handler,
-    output: outputHandle
+    return Promise.resolve({stdout: '', stderr: ''})
   }
 }
 
 /**
  * Wait for an HTTP server to be available.
- * @param url An URL on the HTTP server that would return Status OK if server is on.
+ * @param url An URL on the HTTP server that would return some status if server is on.
  * @param timeout The maximum time to wait, in milliseconds.
  * @returns A promise that resolves when the server is available, or rejects on timeout.
  */
 async function _waitForHttpServer(url: string, timeout: number): Promise<void> {
   const startTime = Date.now()
 
-  return new Promise((resolve, reject) => {
-    const checkServer = (): void => {
-      exec(`curl -s -o /dev/null -w "%{http_code}" ${url}`, (error, stdout) => {
-        if (!error && stdout.trim() === '200') {
-          resolve()
-        } else if (Date.now() - startTime > timeout) {
-          reject(new Error(`Timeout waiting for server at ${url}`))
-        } else {
-          setTimeout(checkServer, 1000) // Retry after 1 second
-        }
-      })
-    }
+  const {stdout} = await _exec(['docker', 'ps'])
+  core.debug(`docker ps result: ${stdout}`)
 
-    checkServer()
-  })
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    try {
+      const result = await _exec([
+        `curl -s -o /dev/null -w "%{http_code}" ${url}`
+      ])
+      if (result.stdout.trim() !== '000') {
+        return
+      }
+      // Wait for a short interval before retrying
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (error) {
+      if (Date.now() - startTime > timeout) {
+        throw new Error(`Timeout waiting for server at ${url}`)
+      }
+    }
+  }
 }
 
 /**
@@ -192,8 +219,9 @@ export type runEnvironment = {
   ensureContainerRunning?: (
     registry: string,
     image_name: string,
-    image_tag: string
-  ) => void
+    image_tag: string,
+    network: string
+  ) => Promise<{stdout: string; stderr: string}>
   waitForHttpServer?: (url: string, timeout: number) => Promise<void>
   getContent?: (url: string) => string
 }
@@ -212,11 +240,22 @@ export async function run({
     const configs = getConfigs()
     core.debug(`Test command was: ${configs.testCommand}`)
 
-    ensureContainerRunning(
-      configs.registry,
-      configs.image_name,
-      configs.image_tag
-    )
+    try {
+      await ensureContainerRunning(
+        configs.registry,
+        configs.image_name,
+        configs.image_tag,
+        configs.network
+      )
+    } catch (error) {
+      core.error(
+        `Error ensuring container is running: ${(error as Error).message}`
+      )
+      core.setFailed(
+        `Error ensuring container is running: ${(error as Error).message}`
+      )
+      throw error
+    }
 
     // Get the JSON webhook payload for the event that triggered the workflow
     // const payload = JSON.stringify(github.context.payload, undefined, 2)
@@ -229,7 +268,6 @@ export async function run({
       content = getContent('http://localhost:8080')
       core.info(`Frontpage content: ${content}`)
     } catch (error) {
-      core.error(`Error fetching frontpage: ${(error as Error).message}`)
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
     }

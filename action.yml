@@ -14,6 +14,10 @@ inputs:
     description: 'The tag of the image to build'
     required: true
     default: 'latest'
+  network:
+    description: 'The Docker network to use. Must match that of the database container.'
+    required: true
+    default: ''
   plugins:
     description: 'List of directories of plugins to test, one per line'
     required: false
