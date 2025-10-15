@@ -153,6 +153,32 @@ function _getCommandOutputHandler(): {
 }
 
 /**
+ * Wait for an HTTP server to be available.
+ * @param url An URL on the HTTP server that would return Status OK if server is on.
+ * @param timeout The maximum time to wait, in milliseconds.
+ * @returns A promise that resolves when the server is available, or rejects on timeout.
+ */
+async function waitForHttpServer(url: string, timeout: number): Promise<void> {
+  const startTime = Date.now()
+
+  return new Promise((resolve, reject) => {
+    const checkServer = (): void => {
+      exec(`curl -s -o /dev/null -w "%{http_code}" ${url}`, (error, stdout) => {
+        if (!error && stdout.trim() === '200') {
+          resolve()
+        } else if (Date.now() - startTime > timeout) {
+          reject(new Error(`Timeout waiting for server at ${url}`))
+        } else {
+          setTimeout(checkServer, 1000) // Retry after 1 second
+        }
+      })
+    }
+
+    checkServer()
+  })
+}
+
+/**
  * Get the content of a URL.
  *
  * @param url
@@ -166,8 +192,9 @@ function getContent(url: string): string {
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-export function run({
+export async function run({
   _ensureContainerRunning = ensureContainerRunning,
+  _waitForHttpServer = waitForHttpServer,
   _getContent = getContent
 }: {
   _ensureContainerRunning?: (
@@ -175,8 +202,9 @@ export function run({
     image_name: string,
     image_tag: string
   ) => void
+  _waitForHttpServer?: (url: string, timeout: number) => Promise<void>
   _getContent?: (url: string) => string
-} = {}): void {
+} = {}): Promise<void> {
   const startTime = new Date().getTime()
   try {
     const configs = getConfigs()
@@ -193,16 +221,18 @@ export function run({
     // core.info(`The event payload: ${payload}`)
 
     // Download the frontpage on localhost:8080
+    let content = ''
     try {
-      const content = _getContent('http://localhost:8080')
-      core.debug(`Frontpage content: ${content}`)
+      await _waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
+      content = _getContent('http://localhost:8080')
+      core.info(`Frontpage content: ${content}`)
     } catch (error) {
       core.error(`Error fetching frontpage: ${(error as Error).message}`)
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
     }
 
-    core.setOutput('stdout', '')
+    core.setOutput('stdout', content)
     core.setOutput('stderr', '')
     core.setOutput('time', new Date().getTime() - startTime)
   } catch (error) {

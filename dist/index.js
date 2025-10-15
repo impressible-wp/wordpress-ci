@@ -25795,6 +25795,31 @@ function _getCommandOutputHandler() {
     };
 }
 /**
+ * Wait for an HTTP server to be available.
+ * @param url An URL on the HTTP server that would return Status OK if server is on.
+ * @param timeout The maximum time to wait, in milliseconds.
+ * @returns A promise that resolves when the server is available, or rejects on timeout.
+ */
+async function waitForHttpServer(url, timeout) {
+    const startTime = Date.now();
+    return new Promise((resolve, reject) => {
+        const checkServer = () => {
+            (0, child_process_1.exec)(`curl -s -o /dev/null -w "%{http_code}" ${url}`, (error, stdout) => {
+                if (!error && stdout.trim() === '200') {
+                    resolve();
+                }
+                else if (Date.now() - startTime > timeout) {
+                    reject(new Error(`Timeout waiting for server at ${url}`));
+                }
+                else {
+                    setTimeout(checkServer, 1000); // Retry after 1 second
+                }
+            });
+        };
+        checkServer();
+    });
+}
+/**
  * Get the content of a URL.
  *
  * @param url
@@ -25807,7 +25832,7 @@ function getContent(url) {
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-function run({ _ensureContainerRunning = ensureContainerRunning, _getContent = getContent } = {}) {
+async function run({ _ensureContainerRunning = ensureContainerRunning, _waitForHttpServer = waitForHttpServer, _getContent = getContent } = {}) {
     const startTime = new Date().getTime();
     try {
         const configs = getConfigs();
@@ -25817,16 +25842,18 @@ function run({ _ensureContainerRunning = ensureContainerRunning, _getContent = g
         // const payload = JSON.stringify(github.context.payload, undefined, 2)
         // core.info(`The event payload: ${payload}`)
         // Download the frontpage on localhost:8080
+        let content = '';
         try {
-            const content = _getContent('http://localhost:8080');
-            core.debug(`Frontpage content: ${content}`);
+            await _waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
+            content = _getContent('http://localhost:8080');
+            core.info(`Frontpage content: ${content}`);
         }
         catch (error) {
             core.error(`Error fetching frontpage: ${error.message}`);
             core.setFailed(`Error fetching frontpage: ${error.message}`);
             throw error;
         }
-        core.setOutput('stdout', '');
+        core.setOutput('stdout', content);
         core.setOutput('stderr', '');
         core.setOutput('time', new Date().getTime() - startTime);
     }
