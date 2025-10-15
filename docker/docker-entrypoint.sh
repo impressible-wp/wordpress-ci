@@ -39,6 +39,11 @@ while ! wp db check --allow-root --quiet; do
     fi
 done
 
+# Check if the database should be clean on start
+if [ "$CLEAN_ON_START" != "" ]; then
+  wp db clean --yes
+fi
+
 # Check if Wordpress is already installed.
 if wp core is-installed --allow-root --quiet; then
     echo "Wordpress is already installed, skipping setup."

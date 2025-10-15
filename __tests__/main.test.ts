@@ -13,11 +13,13 @@ const mockCore = core as jest.Mocked<typeof core>
 
 function mockRunEnvironment(): runEnvironment {
   const ensureContainerRunning = jest.fn()
+  const ensureContainerStopped = jest.fn()
   const waitForHttpServer = jest.fn()
   const getContent = jest.fn().mockReturnValue('<html>Mocked Content</html>')
 
   return {
     ensureContainerRunning,
+    ensureContainerStopped,
     waitForHttpServer,
     getContent
   }
@@ -44,10 +46,10 @@ describe('action', () => {
           return './plugin1\n./plugin2'
         case 'themes':
           return './theme1\n./theme2'
-        case 'context':
-          return './example'
         case 'test-command':
           return 'test command'
+        case 'test-command-context':
+          return './example'
         default:
           return ''
       }
@@ -69,15 +71,23 @@ describe('action', () => {
     expect(mockCore.debug).toHaveBeenCalledWith(
       `themes: ${JSON.stringify(['./theme1', './theme2'])}`
     )
-    expect(mockCore.debug).toHaveBeenCalledWith('context: ./example')
     expect(mockCore.debug).toHaveBeenCalledWith('test-command: test command')
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      'test-command-context: ./example'
+    )
 
     // Assert the container running function was called with correct params
     expect(mockRunEnv.ensureContainerRunning).toHaveBeenCalledWith(
       'registry.io',
       'some-vendor/image-name',
       'some-image-tag',
-      'some-network'
+      'some-network',
+      [
+        '--volume="./plugin1:/var/www/html/wp-content/plugins/plugin1"',
+        '--volume="./plugin2:/var/www/html/wp-content/plugins/plugin2"',
+        '--volume="./theme1:/var/www/html/wp-content/themes/theme1"',
+        '--volume="./theme2:/var/www/html/wp-content/themes/theme2"'
+      ]
     )
 
     // Assert the outputs
@@ -99,7 +109,7 @@ describe('action', () => {
           return ''
         case 'themes':
           return ''
-        case 'context':
+        case 'test-command-context':
           return ''
         case 'network':
           return 'some-network' // network must be set
@@ -116,7 +126,7 @@ describe('action', () => {
       `plugins: ${JSON.stringify([])}`
     )
     expect(mockCore.debug).toHaveBeenCalledWith(`themes: ${JSON.stringify([])}`)
-    expect(mockCore.debug).toHaveBeenCalledWith('context: .')
+    expect(mockCore.debug).toHaveBeenCalledWith('test-command-context: .')
   })
 
   it('sets a failed status when error occurs', async () => {

@@ -26,14 +26,14 @@ inputs:
     description: 'List of directories of themes to test, one per line'
     required: false
     default: ''
-  context:
-    description: 'Directory to run the tests in'
-    required: false
-    default: '.'
   test-command:
     description: 'Command to use to run tests'
     required: true
     default: 'echo "No test command specified"'
+  test-command-context:
+    description: 'Directory to run the test command in'
+    required: false
+    default: '.'
 outputs:
   stdout:
     description: 'The standard output of the action'

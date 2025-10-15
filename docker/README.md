@@ -8,6 +8,7 @@ for CI testing.
 To run a proper environment, you must start and provide a MySQL or compatible server. And then
 you must provide a valid host, user and password with environment variables:
 
+- `CLEAN_ON_START`: If set to anything other than empty string, will clean database everytime on container start.
 - `WORDPRESS_DB_HOST`: The hostname of database server to use.
 - `WORDPRESS_DB_NAME`: The database name to connect to.
 - `WORDPRESS_DB_USER`: The database username for login.

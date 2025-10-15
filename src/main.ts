@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 // import * as github from '@actions/github'
 import {exec, execSync} from 'child_process'
+import {basename} from 'path'
 
 /**
  * Get the input values and form a configuration object
@@ -13,8 +14,8 @@ import {exec, execSync} from 'child_process'
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
- * @property {string} context - The build context path.
  * @property {string} testCommand - The test command to run.
+ * @property {string} testCommandContext - The build context path.
  */
 function getConfigs(): {
   registry: string
@@ -23,8 +24,8 @@ function getConfigs(): {
   network: string
   plugins: string[]
   themes: string[]
-  context: string
   testCommand: string
+  testCommandContext: string
 } {
   const registry = core.getInput('registry').trim()
   core.debug(`registry: ${registry}`)
@@ -53,14 +54,14 @@ function getConfigs(): {
     .filter(t => t)
   core.debug(`themes: ${JSON.stringify(themes)}`)
 
-  let context = core.getInput('context').trim()
-  if (context === '') {
-    context = '.'
-  }
-  core.debug(`context: ${context}`)
-
   const testCommand = core.getInput('test-command').trim()
   core.debug(`test-command: ${testCommand}`)
+
+  let testCommandContext = core.getInput('test-command-context').trim()
+  if (testCommandContext === '') {
+    testCommandContext = '.'
+  }
+  core.debug(`test-command-context: ${testCommandContext}`)
 
   return {
     registry,
@@ -69,8 +70,8 @@ function getConfigs(): {
     network,
     plugins,
     themes,
-    context,
-    testCommand
+    testCommand,
+    testCommandContext
   }
 }
 
@@ -135,7 +136,9 @@ async function _ensureContainerRunning(
   registry: string,
   image_name: string,
   image_tag: string,
-  network: string
+  network: string,
+  container_options: string[] = [],
+  container_name = 'wordpress-ci'
 ): Promise<{stdout: string; stderr: string}> {
   const fullImageName = `${registry}/${image_name}:${image_tag}`
   core.debug(`Ensuring container ${fullImageName} is running...`)
@@ -163,19 +166,19 @@ async function _ensureContainerRunning(
   // Run the container in the background
   if (!stdout || stdout.toString().trim() === '') {
     core.debug(`Container ${fullImageName} is not running. Starting it...`)
-    const cmd = [
-      'docker',
-      'run',
+    const options = [
       '--detach',
-      '--name="wordpress-ci"',
+      `--name="${container_name}"`,
       '--publish="8080:80"',
+      `--env="CLEAN_ON_START=yes"`,
       `--env="WORDPRESS_DB_HOST=${wordpressDbHost}"`,
       `--env="WORDPRESS_DB_NAME=${wordpressDbName}"`,
       `--env="WORDPRESS_DB_USER=${wordpressDbUser}"`,
       `--env="WORDPRESS_DB_PASSWORD=${wordpressDbPassword}"`,
       `--network=${network}`,
-      fullImageName
+      ...container_options
     ]
+    const cmd = ['docker', 'run', ...options, fullImageName]
 
     // eslint-disable-next-line no-console
     console.log(`Starting container by command: ${cmd.join(' ')}`)
@@ -185,6 +188,19 @@ async function _ensureContainerRunning(
     core.debug(`Container ${fullImageName} is already running.`)
     return Promise.resolve({stdout: '', stderr: ''})
   }
+}
+
+/**
+ * Ensure the specified container is stopped.
+ * @param container_name
+ * @returns {Object}
+ * @property {string} stdout - The standard output from the command.
+ * @property {string} stderr - The standard error from the command.
+ */
+async function _ensureContainerStopped(
+  container_name: string
+): Promise<{stdout: string; stderr: string}> {
+  return _exec(['docker', 'container', 'stop', container_name])
 }
 
 /**
@@ -237,7 +253,12 @@ export type runEnvironment = {
     registry: string,
     image_name: string,
     image_tag: string,
-    network: string
+    network: string,
+    container_options?: string[],
+    container_name?: string
+  ) => Promise<{stdout: string; stderr: string}>
+  ensureContainerStopped?: (
+    container_name: string
   ) => Promise<{stdout: string; stderr: string}>
   waitForHttpServer?: (url: string, timeout: number) => Promise<void>
   getContent?: (url: string) => string
@@ -249,6 +270,7 @@ export type runEnvironment = {
  */
 export async function run({
   ensureContainerRunning = _ensureContainerRunning,
+  ensureContainerStopped = _ensureContainerStopped,
   waitForHttpServer = _waitForHttpServer,
   getContent = _getContent
 }: runEnvironment = {}): Promise<void> {
@@ -257,12 +279,31 @@ export async function run({
     const configs = getConfigs()
     core.debug(`Test command was: ${configs.testCommand}`)
 
+    const container_options: string[] = []
+    if (configs.plugins.length > 0) {
+      container_options.push(
+        ...configs.plugins.map(
+          plugin =>
+            `--volume="${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}"`
+        )
+      )
+    }
+    if (configs.themes.length > 0) {
+      container_options.push(
+        ...configs.themes.map(
+          theme =>
+            `--volume="${theme}:/var/www/html/wp-content/themes/${basename(theme)}"`
+        )
+      )
+    }
+
     try {
       await ensureContainerRunning(
         configs.registry,
         configs.image_name,
         configs.image_tag,
-        configs.network
+        configs.network,
+        container_options
       )
     } catch (error) {
       core.error(
@@ -284,9 +325,12 @@ export async function run({
       await waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
       content = getContent('http://localhost:8080')
       core.info(`Frontpage content: ${content}`)
+      // placeholder: run test command here
     } catch (error) {
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
+    } finally {
+      await ensureContainerStopped('wordpress-ci')
     }
 
     core.setOutput('stdout', content)

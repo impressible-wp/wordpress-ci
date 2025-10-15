@@ -42,36 +42,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Check available commands
-        run: |
-          echo "Available commands:"
-          which curl
-          curl --version
-
-      - name: Download the image to test
-        run: |
-          echo "Pulling image ${{ inputs.image_tag }} from GitHub Container Registry"
-          docker pull ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
-
-      # - name: Run the image to test
-      #   run: |
-      #     echo "Running Docker image"
-      #     docker run \
-      #       --detach \
-      #       --name="wordpress-ci" \
-      #       --network="${{ job.services.mysql.network }}" \
-      #       --env="WORDPRESS_DB_HOST=${{ env.WORDPRESS_DB_HOST }}" \
-      #       --env="WORDPRESS_DB_NAME=${{ env.WORDPRESS_DB_NAME }}" \
-      #       --env="WORDPRESS_DB_USER=${{ env.WORDPRESS_DB_USER }}" \
-      #       --env="WORDPRESS_DB_PASSWORD=${{ env.WORDPRESS_DB_PASSWORD }}" \
-      #       --publish="8080:80" \
-      #       ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
-
       - name: Test My Plugin
         uses: ./
         with:
+          registry: ${{ inputs.registry }}
+          image-name: ${{ inputs.image_name }}
+          image-tag: ${{ inputs.image_tag }}
           network: ${{ job.services.mysql.network }}
+          plugins: ./example/myplugin
+          themes: ./example/mytheme
           test-command: echo mytest
+          test-command-context: ./example
 
       # - name: Test My Theme
       #   uses: ./

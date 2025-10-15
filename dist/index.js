@@ -25578,8 +25578,11 @@ __webpack_async_result__();
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5317);
 /* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(child_process__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(6928);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
 
 // import * as github from '@actions/github'
+
 
 /**
  * Get the input values and form a configuration object
@@ -25592,8 +25595,8 @@ __webpack_async_result__();
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
- * @property {string} context - The build context path.
  * @property {string} testCommand - The test command to run.
+ * @property {string} testCommandContext - The build context path.
  */
 function getConfigs() {
     const registry = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('registry').trim();
@@ -25619,13 +25622,13 @@ function getConfigs() {
         .map(t => t.trim())
         .filter(t => t);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`themes: ${JSON.stringify(themes)}`);
-    let context = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('context').trim();
-    if (context === '') {
-        context = '.';
-    }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`context: ${context}`);
     const testCommand = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`test-command: ${testCommand}`);
+    let testCommandContext = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command-context').trim();
+    if (testCommandContext === '') {
+        testCommandContext = '.';
+    }
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`test-command-context: ${testCommandContext}`);
     return {
         registry,
         image_name,
@@ -25633,8 +25636,8 @@ function getConfigs() {
         network,
         plugins,
         themes,
-        context,
-        testCommand
+        testCommand,
+        testCommandContext
     };
 }
 /**
@@ -25684,7 +25687,7 @@ async function _exec(cmd, options = {
  * @param image_name
  * @param image_tag
  */
-async function _ensureContainerRunning(registry, image_name, image_tag, network) {
+async function _ensureContainerRunning(registry, image_name, image_tag, network, container_options = [], container_name = 'wordpress-ci') {
     const fullImageName = `${registry}/${image_name}:${image_tag}`;
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Ensuring container ${fullImageName} is running...`);
     // Get variables from environment
@@ -25707,19 +25710,19 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network)
     // Run the container in the background
     if (!stdout || stdout.toString().trim() === '') {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Container ${fullImageName} is not running. Starting it...`);
-        const cmd = [
-            'docker',
-            'run',
+        const options = [
             '--detach',
-            '--name="wordpress-ci"',
+            `--name="${container_name}"`,
             '--publish="8080:80"',
+            `--env="CLEAN_ON_START=yes"`,
             `--env="WORDPRESS_DB_HOST=${wordpressDbHost}"`,
             `--env="WORDPRESS_DB_NAME=${wordpressDbName}"`,
             `--env="WORDPRESS_DB_USER=${wordpressDbUser}"`,
             `--env="WORDPRESS_DB_PASSWORD=${wordpressDbPassword}"`,
             `--network=${network}`,
-            fullImageName
+            ...container_options
         ];
+        const cmd = ['docker', 'run', ...options, fullImageName];
         // eslint-disable-next-line no-console
         console.log(`Starting container by command: ${cmd.join(' ')}`);
         return _exec(cmd);
@@ -25728,6 +25731,16 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network)
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Container ${fullImageName} is already running.`);
         return Promise.resolve({ stdout: '', stderr: '' });
     }
+}
+/**
+ * Ensure the specified container is stopped.
+ * @param container_name
+ * @returns {Object}
+ * @property {string} stdout - The standard output from the command.
+ * @property {string} stderr - The standard error from the command.
+ */
+async function _ensureContainerStopped(container_name) {
+    return _exec(['docker', 'container', 'stop', container_name]);
 }
 /**
  * Wait for an HTTP server to be available.
@@ -25772,13 +25785,20 @@ function _getContent(url) {
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, waitForHttpServer = _waitForHttpServer, getContent = _getContent } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, waitForHttpServer = _waitForHttpServer, getContent = _getContent } = {}) {
     const startTime = new Date().getTime();
     try {
         const configs = getConfigs();
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Test command was: ${configs.testCommand}`);
+        const container_options = [];
+        if (configs.plugins.length > 0) {
+            container_options.push(...configs.plugins.map(plugin => `--volume="${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}"`));
+        }
+        if (configs.themes.length > 0) {
+            container_options.push(...configs.themes.map(theme => `--volume="${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}"`));
+        }
         try {
-            await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network);
+            await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network, container_options);
         }
         catch (error) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(`Error ensuring container is running: ${error.message}`);
@@ -25794,10 +25814,14 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, waitForHt
             await waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
             content = getContent('http://localhost:8080');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Frontpage content: ${content}`);
+            // placeholder: run test command here
         }
         catch (error) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error fetching frontpage: ${error.message}`);
             throw error;
+        }
+        finally {
+            await ensureContainerStopped('wordpress-ci');
         }
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', content);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stderr', '');
