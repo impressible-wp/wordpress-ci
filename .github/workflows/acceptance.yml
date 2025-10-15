@@ -58,13 +58,13 @@ jobs:
           echo "Running Docker image"
           docker run \
             --detach \
-            --name wordpress-ci \
-            --network ${{ job.services.mysql.network }} \
-            -e WORDPRESS_DB_HOST=${{ env.WORDPRESS_DB_HOST }} \
-            -e WORDPRESS_DB_NAME=${{ env.WORDPRESS_DB_NAME }} \
-            -e WORDPRESS_DB_USER=${{ env.WORDPRESS_DB_USER }} \
-            -e WORDPRESS_DB_PASSWORD=${{ env.WORDPRESS_DB_PASSWORD }} \
-            --publish 8080:80 \
+            --name="wordpress-ci" \
+            --network="${{ job.services.mysql.network }}" \
+            --env="WORDPRESS_DB_HOST=${{ env.WORDPRESS_DB_HOST }}" \
+            --env="WORDPRESS_DB_NAME=${{ env.WORDPRESS_DB_NAME }}" \
+            --env="WORDPRESS_DB_USER=${{ env.WORDPRESS_DB_USER }}" \
+            --env="WORDPRESS_DB_PASSWORD=${{ env.WORDPRESS_DB_PASSWORD }}" \
+            --publish="8080:80" \
             ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
 
       - name: Test My Plugin
