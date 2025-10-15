@@ -2,6 +2,18 @@ name: 'Wordpress CI'
 description: 'Wordpress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
+  registry:
+    description: 'The container registry to pull the image from'
+    required: true
+    default: 'ghcr.io'
+  image-name:
+    description: 'The name of the image to build'
+    required: true
+    default: 'impressible-wp/wordpress-ci'
+  image-tag:
+    description: 'The tag of the image to build'
+    required: true
+    default: 'latest'
   plugins:
     description: 'List of directories of plugins to test, one per line'
     required: false

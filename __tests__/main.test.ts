@@ -20,6 +20,12 @@ describe('action', () => {
     // Set the action's inputs as return values from core.getInput()
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
+        case 'registry':
+          return 'ghcr.io'
+        case 'image_name':
+          return 'impressible-wp/wordpress-ci'
+        case 'image_tag':
+          return 'latest'
         case 'plugins':
           return './plugin1\n./plugin2'
         case 'themes':
@@ -36,6 +42,11 @@ describe('action', () => {
     run()
 
     // Assert the outputs and debug messages
+    expect(mockCore.debug).toHaveBeenCalledWith('registry: ghcr.io')
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      'image_name: impressible-wp/wordpress-ci'
+    )
+    expect(mockCore.debug).toHaveBeenCalledWith('image_tag: latest')
     expect(mockCore.debug).toHaveBeenCalledWith(
       `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`
     )
