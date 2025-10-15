@@ -1,6 +1,6 @@
 {
-    "name": "impressible/wordpress-ci-example",
-    "description": "An example project to show case wordpress-ci with.\u001b",
+    "name": "impressible/wordpress-ci-example-theme",
+    "description": "An example project to show case wordpress-ci with.",
     "type": "project",
     "license": "MIT",
     "authors": [
