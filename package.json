@@ -4,6 +4,7 @@
   "description": "A GitHub Action for doing integration test and acceptance test with Wordpress",
   "main": "dist/index.js",
   "scripts": {
+    "postinstall": "git config get core.hooksPath >/dev/null || git config set core.hooksPath .githooks",
     "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "dev": "ncc build src/index.ts -o dist --source-map --license licenses.txt --watch",
     "lint": "eslint src/**/*.ts",
