@@ -52,9 +52,16 @@ jobs:
           plugins: ./example/myplugin
           themes: ./example/mytheme
           test-command: echo mytest
-          test-command-context: ./example
+          test-command-context: ./example/myplugin
 
-      # - name: Test My Theme
-      #   uses: ./
-      #   with:
-      #     test-command: echo mytest
+      - name: Test My Theme
+        uses: ./
+        with:
+          registry: ${{ inputs.registry }}
+          image-name: ${{ inputs.image_name }}
+          image-tag: ${{ inputs.image_tag }}
+          network: ${{ job.services.mysql.network }}
+          plugins: ./example/myplugin
+          themes: ./example/mytheme
+          test-command: echo mytest
+          test-command-context: ./example/mytheme
