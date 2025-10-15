@@ -200,7 +200,8 @@ async function _ensureContainerRunning(
 async function _ensureContainerStopped(
   container_name: string
 ): Promise<{stdout: string; stderr: string}> {
-  return _exec(['docker', 'container', 'stop', container_name])
+  await _exec(['docker', 'container', 'stop', container_name])
+  return _exec(['docker', 'container', 'rm', container_name])
 }
 
 /**

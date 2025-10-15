@@ -25740,7 +25740,8 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
  * @property {string} stderr - The standard error from the command.
  */
 async function _ensureContainerStopped(container_name) {
-    return _exec(['docker', 'container', 'stop', container_name]);
+    await _exec(['docker', 'container', 'stop', container_name]);
+    return _exec(['docker', 'container', 'rm', container_name]);
 }
 /**
  * Wait for an HTTP server to be available.
