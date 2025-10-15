@@ -2,14 +2,29 @@ name: 'Wordpress CI'
 description: 'Wordpress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
-  workdir:
-    description: 'Working directory'
+  plugins:
+    description: 'List of directories of plugins to test, one per line'
+    required: false
+    default: ''
+  themes:
+    description: 'List of directories of themes to test, one per line'
+    required: false
+    default: ''
+  context:
+    description: 'Directory to run the tests in'
     required: false
     default: '.'
   test-command:
     description: 'Command to use to run tests'
     required: true
     default: 'echo "No test command specified"'
+outputs:
+  stdout:
+    description: 'The standard output of the action'
+  stderr:
+    description: 'The standard error output of the action'
+  time:
+    description: 'The time the action was run'
 runs:
   using: 'node20'
   main: 'dist/index.js'

@@ -16,12 +16,16 @@ describe('action', () => {
     jest.clearAllMocks()
   })
 
-  it('sets the time output', () => {
+  it('sets common input', () => {
     // Set the action's inputs as return values from core.getInput()
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
-        case 'workdir':
-          return '/github/workspace'
+        case 'plugins':
+          return './plugin1\n./plugin2'
+        case 'themes':
+          return './theme1\n./theme2'
+        case 'context':
+          return './example'
         case 'test-command':
           return 'test command'
         default:
@@ -31,13 +35,48 @@ describe('action', () => {
 
     run()
 
+    // Assert the outputs and debug messages
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'Working directory is: /github/workspace'
+      `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`
     )
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'Test command was: test command'
+      `themes: ${JSON.stringify(['./theme1', './theme2'])}`
     )
-    expect(mockCore.setOutput).toHaveBeenCalledWith('time', expect.any(String))
+    expect(mockCore.debug).toHaveBeenCalledWith('context: ./example')
+    expect(mockCore.debug).toHaveBeenCalledWith('test-command: test command')
+    expect(mockCore.setOutput).toHaveBeenCalledWith(
+      'stdout',
+      expect.any(String)
+    )
+    expect(mockCore.setOutput).toHaveBeenCalledWith(
+      'stderr',
+      expect.any(String)
+    )
+    expect(mockCore.setOutput).toHaveBeenCalledWith('time', expect.any(Number))
+  })
+
+  it('sets empty values', () => {
+    mockCore.getInput.mockImplementation((name: string): string => {
+      switch (name) {
+        case 'plugins':
+          return ''
+        case 'themes':
+          return ''
+        case 'context':
+          return ''
+        default:
+          return ''
+      }
+    })
+
+    run()
+
+    // Assert the outputs and debug messages
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      `plugins: ${JSON.stringify([])}`
+    )
+    expect(mockCore.debug).toHaveBeenCalledWith(`themes: ${JSON.stringify([])}`)
+    expect(mockCore.debug).toHaveBeenCalledWith('context: .')
   })
 
   it('sets a failed status when error occurs', () => {
