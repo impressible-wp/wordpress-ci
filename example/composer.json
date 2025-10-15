@@ -1,0 +1,15 @@
+{
+    "name": "impressible/wordpress-ci-example",
+    "description": "An example project to show case wordpress-ci with.\u001b",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Koala Yeung",
+            "email": "koalay@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "codeception/codeception": "^5.3"
+    }
+}
