@@ -1,4 +1,4 @@
-import {run} from '../src/main'
+import {run, runEnvironment} from '../src/main'
 import * as core from '@actions/core'
 
 // Mock the action's core module
@@ -11,12 +11,24 @@ jest.mock('@actions/github', () => ({
 
 const mockCore = core as jest.Mocked<typeof core>
 
+function mockRunEnvironment(): runEnvironment {
+  const ensureContainerRunning = jest.fn()
+  const waitForHttpServer = jest.fn()
+  const getContent = jest.fn().mockReturnValue('<html>Mocked Content</html>')
+
+  return {
+    ensureContainerRunning,
+    waitForHttpServer,
+    getContent
+  }
+}
+
 describe('action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it('sets common input', () => {
+  it('sets common input', async () => {
     // Set the action's inputs as return values from core.getInput()
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
@@ -39,15 +51,8 @@ describe('action', () => {
       }
     })
 
-    const mockEnsureContainerRunning = jest.fn()
-    const mockGetContent = jest
-      .fn()
-      .mockReturnValue('<html>Mocked Content</html>')
-
-    run({
-      _ensureContainerRunning: mockEnsureContainerRunning,
-      _getContent: mockGetContent
-    })
+    const mockRunEnv = mockRunEnvironment()
+    await run(mockRunEnv)
 
     // Assert the inputs
     expect(mockCore.debug).toHaveBeenCalledWith('registry: registry.io')
@@ -65,7 +70,7 @@ describe('action', () => {
     expect(mockCore.debug).toHaveBeenCalledWith('test-command: test command')
 
     // Assert the container running function was called with correct params
-    expect(mockEnsureContainerRunning).toHaveBeenCalledWith(
+    expect(mockRunEnv.ensureContainerRunning).toHaveBeenCalledWith(
       'registry.io',
       'some-vendor/image-name',
       'some-image-tag'
@@ -83,7 +88,7 @@ describe('action', () => {
     expect(mockCore.setOutput).toHaveBeenCalledWith('time', expect.any(Number))
   })
 
-  it('sets empty values', () => {
+  it('sets empty values', async () => {
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
         case 'plugins':
@@ -97,15 +102,8 @@ describe('action', () => {
       }
     })
 
-    const mockEnsureContainerRunning = jest.fn()
-    const mockGetContent = jest
-      .fn()
-      .mockReturnValue('<html>Mocked Content</html>')
-
-    run({
-      _ensureContainerRunning: mockEnsureContainerRunning,
-      _getContent: mockGetContent
-    })
+    const mockRunEnv = mockRunEnvironment()
+    await run(mockRunEnv)
 
     // Assert the outputs and debug messages
     expect(mockCore.debug).toHaveBeenCalledWith(
@@ -115,21 +113,14 @@ describe('action', () => {
     expect(mockCore.debug).toHaveBeenCalledWith('context: .')
   })
 
-  it('sets a failed status when error occurs', () => {
+  it('sets a failed status when error occurs', async () => {
     // Arrange
     mockCore.getInput.mockImplementation(() => {
       throw new Error('Input error')
     })
 
-    const mockEnsureContainerRunning = jest.fn()
-    const mockGetContent = jest
-      .fn()
-      .mockReturnValue('<html>Mocked Content</html>')
-
-    run({
-      _ensureContainerRunning: mockEnsureContainerRunning,
-      _getContent: mockGetContent
-    })
+    const mockRunEnv = mockRunEnvironment()
+    await run(mockRunEnv)
 
     // Assert
     expect(mockCore.setFailed).toHaveBeenCalledWith('Input error')

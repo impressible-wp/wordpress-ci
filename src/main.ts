@@ -72,7 +72,7 @@ function getConfigs(): {
  * @param image_name
  * @param image_tag
  */
-function ensureContainerRunning(
+function _ensureContainerRunning(
   registry: string,
   image_name: string,
   image_tag: string
@@ -158,7 +158,7 @@ function _getCommandOutputHandler(): {
  * @param timeout The maximum time to wait, in milliseconds.
  * @returns A promise that resolves when the server is available, or rejects on timeout.
  */
-async function waitForHttpServer(url: string, timeout: number): Promise<void> {
+async function _waitForHttpServer(url: string, timeout: number): Promise<void> {
   const startTime = Date.now()
 
   return new Promise((resolve, reject) => {
@@ -184,8 +184,18 @@ async function waitForHttpServer(url: string, timeout: number): Promise<void> {
  * @param url
  * @returns
  */
-function getContent(url: string): string {
+function _getContent(url: string): string {
   return execSync(`curl -s ${url}`).toString()
+}
+
+export type runEnvironment = {
+  ensureContainerRunning?: (
+    registry: string,
+    image_name: string,
+    image_tag: string
+  ) => void
+  waitForHttpServer?: (url: string, timeout: number) => Promise<void>
+  getContent?: (url: string) => string
 }
 
 /**
@@ -193,24 +203,16 @@ function getContent(url: string): string {
  * @returns {void} Completes when the action is done.
  */
 export async function run({
-  _ensureContainerRunning = ensureContainerRunning,
-  _waitForHttpServer = waitForHttpServer,
-  _getContent = getContent
-}: {
-  _ensureContainerRunning?: (
-    registry: string,
-    image_name: string,
-    image_tag: string
-  ) => void
-  _waitForHttpServer?: (url: string, timeout: number) => Promise<void>
-  _getContent?: (url: string) => string
-} = {}): Promise<void> {
+  ensureContainerRunning = _ensureContainerRunning,
+  waitForHttpServer = _waitForHttpServer,
+  getContent = _getContent
+}: runEnvironment = {}): Promise<void> {
   const startTime = new Date().getTime()
   try {
     const configs = getConfigs()
     core.debug(`Test command was: ${configs.testCommand}`)
 
-    _ensureContainerRunning(
+    ensureContainerRunning(
       configs.registry,
       configs.image_name,
       configs.image_tag
@@ -223,8 +225,8 @@ export async function run({
     // Download the frontpage on localhost:8080
     let content = ''
     try {
-      await _waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
-      content = _getContent('http://localhost:8080')
+      await waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
+      content = getContent('http://localhost:8080')
       core.info(`Frontpage content: ${content}`)
     } catch (error) {
       core.error(`Error fetching frontpage: ${(error as Error).message}`)

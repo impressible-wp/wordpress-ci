@@ -1,3 +1,3 @@
 import {run} from './main'
 
-run()
+await run()

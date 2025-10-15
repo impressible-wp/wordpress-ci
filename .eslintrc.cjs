@@ -17,6 +17,16 @@ module.exports = {
     'i18n-text/no-en': 'off',
     'eslint-comments/no-use': 'off',
     'import/no-namespace': 'off',
+    'import/extensions': [
+      'error',
+      'ignorePackages',
+      {
+        ts: 'never',
+        tsx: 'never',
+        js: 'never',
+        jsx: 'never'
+      }
+    ],
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': 'error',
     '@typescript-eslint/explicit-member-accessibility': [
