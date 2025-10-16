@@ -25815,7 +25815,17 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             await waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
             content = getContent('http://localhost:8080');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Frontpage content: ${content}`);
-            // placeholder: run test command here
+            // change to the test command context directory
+            process.chdir(configs.testCommandContext);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
+            // run the test command
+            if (configs.testCommand) {
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Running test command: ${configs.testCommand}`);
+                (0,child_process__WEBPACK_IMPORTED_MODULE_1__.execSync)(configs.testCommand, { stdio: 'inherit' });
+            }
+            else {
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('No test command provided, skipping test execution.');
+            }
         }
         catch (error) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error fetching frontpage: ${error.message}`);

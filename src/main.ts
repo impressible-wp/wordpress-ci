@@ -326,7 +326,18 @@ export async function run({
       await waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
       content = getContent('http://localhost:8080')
       core.info(`Frontpage content: ${content}`)
-      // placeholder: run test command here
+
+      // change to the test command context directory
+      process.chdir(configs.testCommandContext)
+      core.info(`Changed directory to ${configs.testCommandContext}`)
+
+      // run the test command
+      if (configs.testCommand) {
+        core.info(`Running test command: ${configs.testCommand}`)
+        execSync(configs.testCommand, {stdio: 'inherit'})
+      } else {
+        core.info('No test command provided, skipping test execution.')
+      }
     } catch (error) {
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
