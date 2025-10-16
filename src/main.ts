@@ -3,6 +3,7 @@ import * as core from '@actions/core'
 import {exec} from 'child_process'
 import {basename} from 'path'
 import fs from 'fs'
+import c from 'ansi-colors'
 
 /**
  * Get the input values and form a configuration object
@@ -118,13 +119,21 @@ async function _exec(
   options: {
     logStdout: boolean
     logStderr: boolean
+    showCommand?: boolean
   } = {
     logStdout: true,
-    logStderr: true
+    logStderr: true,
+    showCommand: true
   }
 ): Promise<{stdout: string; stderr: string}> {
   return new Promise((resolve, reject) => {
-    const subprocess = exec(cmd.join(' '))
+    // Show the command being executed
+    const cmdStr = cmd.join(' ')
+    if (options.showCommand) {
+      core.info(`> ${c.blue(cmdStr)}`)
+    }
+
+    const subprocess = exec(cmdStr)
     let stdout = ''
     let stderr = ''
     subprocess?.stdout?.on('data', (data: string) => {
@@ -136,7 +145,7 @@ async function _exec(
     subprocess?.stderr?.on('data', (data: string) => {
       stderr += data
       if (options.logStderr) {
-        core.info(data.trim())
+        core.info(c.magenta(data.trim()))
       }
     })
     subprocess.on('exit', code => {
@@ -199,10 +208,6 @@ async function _ensureContainerRunning(
       ...container_options
     ]
     const cmd = ['docker', 'run', ...options, fullImageName]
-
-    // eslint-disable-next-line no-console
-    console.log(`Starting container by command: ${cmd.join(' ')}`)
-
     return _exec(cmd)
   } else {
     core.debug(`Container ${fullImageName} is already running.`)
@@ -243,7 +248,8 @@ async function _waitForHttpServer(url: string, timeout: number): Promise<void> {
         [`curl -s -o /dev/null -w "%{http_code}" ${url}`],
         {
           logStdout: false,
-          logStderr: false
+          logStderr: false,
+          showCommand: false
         }
       )
       if (result.stdout.trim() !== '000') {

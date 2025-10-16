@@ -3180,6 +3180,273 @@ function copyFile(srcFile, destFile, force) {
 
 /***/ }),
 
+/***/ 4801:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+
+
+const isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
+
+/* eslint-disable no-control-regex */
+// this is a modified version of https://github.com/chalk/ansi-regex (MIT License)
+const ANSI_REGEX = /[\u001b\u009b][[\]#;?()]*(?:(?:(?:[^\W_]*;?[^\W_]*)\u0007)|(?:(?:[0-9]{1,4}(;[0-9]{0,4})*)?[~0-9=<>cf-nqrtyA-PRZ]))/g;
+
+const hasColor = () => {
+  if (typeof process !== 'undefined') {
+    return process.env.FORCE_COLOR !== '0';
+  }
+  return false;
+};
+
+const create = () => {
+  const colors = {
+    enabled: hasColor(),
+    visible: true,
+    styles: {},
+    keys: {}
+  };
+
+  const ansi = style => {
+    let open = style.open = `\u001b[${style.codes[0]}m`;
+    let close = style.close = `\u001b[${style.codes[1]}m`;
+    let regex = style.regex = new RegExp(`\\u001b\\[${style.codes[1]}m`, 'g');
+    style.wrap = (input, newline) => {
+      if (input.includes(close)) input = input.replace(regex, close + open);
+      let output = open + input + close;
+      // see https://github.com/chalk/chalk/pull/92, thanks to the
+      // chalk contributors for this fix. However, we've confirmed that
+      // this issue is also present in Windows terminals
+      return newline ? output.replace(/\r*\n/g, `${close}$&${open}`) : output;
+    };
+    return style;
+  };
+
+  const wrap = (style, input, newline) => {
+    return typeof style === 'function' ? style(input) : style.wrap(input, newline);
+  };
+
+  const style = (input, stack) => {
+    if (input === '' || input == null) return '';
+    if (colors.enabled === false) return input;
+    if (colors.visible === false) return '';
+    let str = '' + input;
+    let nl = str.includes('\n');
+    let n = stack.length;
+    if (n > 0 && stack.includes('unstyle')) {
+      stack = [...new Set(['unstyle', ...stack])].reverse();
+    }
+    while (n-- > 0) str = wrap(colors.styles[stack[n]], str, nl);
+    return str;
+  };
+
+  const define = (name, codes, type) => {
+    colors.styles[name] = ansi({ name, codes });
+    let keys = colors.keys[type] || (colors.keys[type] = []);
+    keys.push(name);
+
+    Reflect.defineProperty(colors, name, {
+      configurable: true,
+      enumerable: true,
+      set(value) {
+        colors.alias(name, value);
+      },
+      get() {
+        let color = input => style(input, color.stack);
+        Reflect.setPrototypeOf(color, colors);
+        color.stack = this.stack ? this.stack.concat(name) : [name];
+        return color;
+      }
+    });
+  };
+
+  define('reset', [0, 0], 'modifier');
+  define('bold', [1, 22], 'modifier');
+  define('dim', [2, 22], 'modifier');
+  define('italic', [3, 23], 'modifier');
+  define('underline', [4, 24], 'modifier');
+  define('inverse', [7, 27], 'modifier');
+  define('hidden', [8, 28], 'modifier');
+  define('strikethrough', [9, 29], 'modifier');
+
+  define('black', [30, 39], 'color');
+  define('red', [31, 39], 'color');
+  define('green', [32, 39], 'color');
+  define('yellow', [33, 39], 'color');
+  define('blue', [34, 39], 'color');
+  define('magenta', [35, 39], 'color');
+  define('cyan', [36, 39], 'color');
+  define('white', [37, 39], 'color');
+  define('gray', [90, 39], 'color');
+  define('grey', [90, 39], 'color');
+
+  define('bgBlack', [40, 49], 'bg');
+  define('bgRed', [41, 49], 'bg');
+  define('bgGreen', [42, 49], 'bg');
+  define('bgYellow', [43, 49], 'bg');
+  define('bgBlue', [44, 49], 'bg');
+  define('bgMagenta', [45, 49], 'bg');
+  define('bgCyan', [46, 49], 'bg');
+  define('bgWhite', [47, 49], 'bg');
+
+  define('blackBright', [90, 39], 'bright');
+  define('redBright', [91, 39], 'bright');
+  define('greenBright', [92, 39], 'bright');
+  define('yellowBright', [93, 39], 'bright');
+  define('blueBright', [94, 39], 'bright');
+  define('magentaBright', [95, 39], 'bright');
+  define('cyanBright', [96, 39], 'bright');
+  define('whiteBright', [97, 39], 'bright');
+
+  define('bgBlackBright', [100, 49], 'bgBright');
+  define('bgRedBright', [101, 49], 'bgBright');
+  define('bgGreenBright', [102, 49], 'bgBright');
+  define('bgYellowBright', [103, 49], 'bgBright');
+  define('bgBlueBright', [104, 49], 'bgBright');
+  define('bgMagentaBright', [105, 49], 'bgBright');
+  define('bgCyanBright', [106, 49], 'bgBright');
+  define('bgWhiteBright', [107, 49], 'bgBright');
+
+  colors.ansiRegex = ANSI_REGEX;
+  colors.hasColor = colors.hasAnsi = str => {
+    colors.ansiRegex.lastIndex = 0;
+    return typeof str === 'string' && str !== '' && colors.ansiRegex.test(str);
+  };
+
+  colors.alias = (name, color) => {
+    let fn = typeof color === 'string' ? colors[color] : color;
+
+    if (typeof fn !== 'function') {
+      throw new TypeError('Expected alias to be the name of an existing color (string) or a function');
+    }
+
+    if (!fn.stack) {
+      Reflect.defineProperty(fn, 'name', { value: name });
+      colors.styles[name] = fn;
+      fn.stack = [name];
+    }
+
+    Reflect.defineProperty(colors, name, {
+      configurable: true,
+      enumerable: true,
+      set(value) {
+        colors.alias(name, value);
+      },
+      get() {
+        let color = input => style(input, color.stack);
+        Reflect.setPrototypeOf(color, colors);
+        color.stack = this.stack ? this.stack.concat(fn.stack) : fn.stack;
+        return color;
+      }
+    });
+  };
+
+  colors.theme = custom => {
+    if (!isObject(custom)) throw new TypeError('Expected theme to be an object');
+    for (let name of Object.keys(custom)) {
+      colors.alias(name, custom[name]);
+    }
+    return colors;
+  };
+
+  colors.alias('unstyle', str => {
+    if (typeof str === 'string' && str !== '') {
+      colors.ansiRegex.lastIndex = 0;
+      return str.replace(colors.ansiRegex, '');
+    }
+    return '';
+  });
+
+  colors.alias('noop', str => str);
+  colors.none = colors.clear = colors.noop;
+
+  colors.stripColor = colors.unstyle;
+  colors.symbols = __nccwpck_require__(4763);
+  colors.define = define;
+  return colors;
+};
+
+module.exports = create();
+module.exports.create = create;
+
+
+/***/ }),
+
+/***/ 4763:
+/***/ ((module) => {
+
+
+
+const isHyper = typeof process !== 'undefined' && process.env.TERM_PROGRAM === 'Hyper';
+const isWindows = typeof process !== 'undefined' && process.platform === 'win32';
+const isLinux = typeof process !== 'undefined' && process.platform === 'linux';
+
+const common = {
+  ballotDisabled: '☒',
+  ballotOff: '☐',
+  ballotOn: '☑',
+  bullet: '•',
+  bulletWhite: '◦',
+  fullBlock: '█',
+  heart: '❤',
+  identicalTo: '≡',
+  line: '─',
+  mark: '※',
+  middot: '·',
+  minus: '－',
+  multiplication: '×',
+  obelus: '÷',
+  pencilDownRight: '✎',
+  pencilRight: '✏',
+  pencilUpRight: '✐',
+  percent: '%',
+  pilcrow2: '❡',
+  pilcrow: '¶',
+  plusMinus: '±',
+  question: '?',
+  section: '§',
+  starsOff: '☆',
+  starsOn: '★',
+  upDownArrow: '↕'
+};
+
+const windows = Object.assign({}, common, {
+  check: '√',
+  cross: '×',
+  ellipsisLarge: '...',
+  ellipsis: '...',
+  info: 'i',
+  questionSmall: '?',
+  pointer: '>',
+  pointerSmall: '»',
+  radioOff: '( )',
+  radioOn: '(*)',
+  warning: '‼'
+});
+
+const other = Object.assign({}, common, {
+  ballotCross: '✘',
+  check: '✔',
+  cross: '✖',
+  ellipsisLarge: '⋯',
+  ellipsis: '…',
+  info: 'ℹ',
+  questionFull: '？',
+  questionSmall: '﹖',
+  pointer: isLinux ? '▸' : '❯',
+  pointerSmall: isLinux ? '‣' : '›',
+  radioOff: '◯',
+  radioOn: '◉',
+  warning: '⚠'
+});
+
+module.exports = (isWindows && !isHyper) ? windows : other;
+Reflect.defineProperty(module.exports, 'common', { enumerable: false, value: common });
+Reflect.defineProperty(module.exports, 'windows', { enumerable: false, value: windows });
+Reflect.defineProperty(module.exports, 'other', { enumerable: false, value: other });
+
+
+/***/ }),
+
 /***/ 770:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -25582,8 +25849,11 @@ __webpack_async_result__();
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(9896);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(fs__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(4801);
+/* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__nccwpck_require__.n(ansi_colors__WEBPACK_IMPORTED_MODULE_4__);
 
 // import * as github from '@actions/github'
+
 
 
 
@@ -25678,10 +25948,16 @@ function getConfigs() {
  */
 async function _exec(cmd, options = {
     logStdout: true,
-    logStderr: true
+    logStderr: true,
+    showCommand: true
 }) {
     return new Promise((resolve, reject) => {
-        const subprocess = (0,child_process__WEBPACK_IMPORTED_MODULE_1__.exec)(cmd.join(' '));
+        // Show the command being executed
+        const cmdStr = cmd.join(' ');
+        if (options.showCommand) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`> ${ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(cmdStr)}`);
+        }
+        const subprocess = (0,child_process__WEBPACK_IMPORTED_MODULE_1__.exec)(cmdStr);
         let stdout = '';
         let stderr = '';
         subprocess?.stdout?.on('data', (data) => {
@@ -25693,7 +25969,7 @@ async function _exec(cmd, options = {
         subprocess?.stderr?.on('data', (data) => {
             stderr += data;
             if (options.logStderr) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(data.trim()));
             }
         });
         subprocess.on('exit', code => {
@@ -25743,8 +26019,6 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
             ...container_options
         ];
         const cmd = ['docker', 'run', ...options, fullImageName];
-        // eslint-disable-next-line no-console
-        console.log(`Starting container by command: ${cmd.join(' ')}`);
         return _exec(cmd);
     }
     else {
@@ -25778,7 +26052,8 @@ async function _waitForHttpServer(url, timeout) {
         try {
             const result = await _exec([`curl -s -o /dev/null -w "%{http_code}" ${url}`], {
                 logStdout: false,
-                logStderr: false
+                logStderr: false,
+                showCommand: false
             });
             if (result.stdout.trim() !== '000') {
                 return;
