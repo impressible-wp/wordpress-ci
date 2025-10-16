@@ -122,7 +122,7 @@ async function _exec(
     showCommand?: boolean
     useTty?: boolean
   } = {
-    logStdout: true,
+    logStdout: false,
     logStderr: true,
     showCommand: false,
     useTty: true
@@ -162,19 +162,12 @@ async function _exec(
     }
   }
 
-  try {
-    const exitCode = await exec.exec(command, args, execOptions)
-    if (exitCode === 0) {
-      return {stdout, stderr}
-    } else {
-      throw new Error(
-        `Command failed: ${cmdStr}\nExit code: ${exitCode}\nStderr: ${stderr}`
-      )
-    }
-  } catch (error) {
-    throw new Error(
-      `Command failed: ${cmdStr}\nError: ${error instanceof Error ? error.message : String(error)}\nStderr: ${stderr}`
-    )
+  const exitCode = await exec.exec(command, args, execOptions)
+  if (exitCode === 0) {
+    return {stdout, stderr}
+  } else {
+    core.info(c.red(stderr))
+    throw new Error(`command failed: ${cmdStr}\nexit code: ${exitCode}`)
   }
 }
 
@@ -319,7 +312,7 @@ function _proxiedContainerCommandScript(
 ): string {
   return `#!/bin/bash
 
-  docker exec -it ${container_name} ${container_command_name} "$@"
+  docker exec -i ${container_name} ${container_command_name} "$@"
 
   exit $?
   `

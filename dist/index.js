@@ -25947,7 +25947,7 @@ function getConfigs() {
  * @returns {Promise<{stdout: string, stderr: string}>}
  */
 async function _exec(cmd, options = {
-    logStdout: true,
+    logStdout: false,
     logStderr: true,
     showCommand: false,
     useTty: true
@@ -25982,17 +25982,13 @@ async function _exec(cmd, options = {
             }
         }
     };
-    try {
-        const exitCode = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec(command, args, execOptions);
-        if (exitCode === 0) {
-            return { stdout, stderr };
-        }
-        else {
-            throw new Error(`Command failed: ${cmdStr}\nExit code: ${exitCode}\nStderr: ${stderr}`);
-        }
+    const exitCode = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec(command, args, execOptions);
+    if (exitCode === 0) {
+        return { stdout, stderr };
     }
-    catch (error) {
-        throw new Error(`Command failed: ${cmdStr}\nError: ${error instanceof Error ? error.message : String(error)}\nStderr: ${stderr}`);
+    else {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().red(stderr));
+        throw new Error(`command failed: ${cmdStr}\nexit code: ${exitCode}`);
     }
 }
 async function _shellExec(script, options = {
@@ -26105,7 +26101,7 @@ async function _waitForHttpServer(url, timeout) {
 function _proxiedContainerCommandScript(container_name, container_command_name = '') {
     return `#!/bin/bash
 
-  docker exec -it ${container_name} ${container_command_name} "$@"
+  docker exec -i ${container_name} ${container_command_name} "$@"
 
   exit $?
   `;
