@@ -74,6 +74,7 @@ jobs:
 
           if [[ "${{ matrix.php-version }}" == "${{ env.PHP_LATEST }}" ]]; then
             ARGS+=( --tag $REGISTRY/$IMAGE_NAME:latest )
+            ARGS+=( --tag $REGISTRY/$IMAGE_NAME:sha256-${{ github.sha }}-latest )
           fi
 
           echo "Building Docker image with the following arguments:"
