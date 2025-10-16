@@ -295,11 +295,13 @@ function _proxiedContainerCommandScript(
 function _installScript(script_fullpath: string, script_content: string): void {
   if (fs.existsSync(script_fullpath)) {
     core.info(
-      `Script ${script_fullpath} already exists, skipping installation.`
+      c.magenta(
+        `Script ${script_fullpath} already exists, skipping installation.`
+      )
     )
     return
   }
-  core.info(`Installing script to ${script_fullpath}...`)
+  core.info(c.blue(`Installing script to ${script_fullpath}...`))
 
   // Write the script content to the file and make it executable
   fs.writeFileSync(script_fullpath, script_content, {mode: 0o755})
@@ -401,16 +403,16 @@ export async function run({
     // Download the frontpage on localhost:8080
     try {
       // change to the test command context directory
+      core.info(`Changed directory to ${configs.testCommandContext}`)
       process.chdir(configs.testCommandContext)
 
       // run the test command
       if (configs.testCommand) {
-        core.startGroup('Command')
+        core.startGroup('Test Command')
         core.info(configs.testCommand)
         core.endGroup()
 
-        core.info(`Changed directory to ${configs.testCommandContext}`)
-        core.startGroup('Run Test Command')
+        core.startGroup('Test Command Result')
         await _exec([configs.testCommand])
       } else {
         core.info('No test command provided, skipping test execution.')

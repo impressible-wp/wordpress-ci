@@ -26093,10 +26093,10 @@ function _proxiedContainerCommandScript(container_name, container_command_name =
  */
 function _installScript(script_fullpath, script_content) {
     if (fs__WEBPACK_IMPORTED_MODULE_3___default().existsSync(script_fullpath)) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Script ${script_fullpath} already exists, skipping installation.`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(`Script ${script_fullpath} already exists, skipping installation.`));
         return;
     }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Installing script to ${script_fullpath}...`);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(`Installing script to ${script_fullpath}...`));
     // Write the script content to the file and make it executable
     fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(script_fullpath, script_content, { mode: 0o755 });
 }
@@ -26144,14 +26144,14 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         // Download the frontpage on localhost:8080
         try {
             // change to the test command context directory
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
             process.chdir(configs.testCommandContext);
             // run the test command
             if (configs.testCommand) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Command');
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Test Command');
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(configs.testCommand);
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Run Test Command');
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Test Command Result');
                 await _exec([configs.testCommand]);
             }
             else {
