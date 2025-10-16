@@ -25964,7 +25964,7 @@ async function _exec(cmd, options = {
     let stdout = '';
     let stderr = '';
     const execOptions = {
-        silent: !options.logStdout, // If logStdout is false, run silently
+        silent: true, // If logStdout is false, run silently
         listeners: {
             stdout: (data) => {
                 const output = data.toString();
@@ -26164,7 +26164,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
         }
         try {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Start Wordpress CI container');
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Verify Wordpress CI is up and running');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
             await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
         }

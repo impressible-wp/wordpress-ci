@@ -143,7 +143,7 @@ async function _exec(
   let stderr = ''
 
   const execOptions: exec.ExecOptions = {
-    silent: !options.logStdout, // If logStdout is false, run silently
+    silent: true, // If logStdout is false, run silently
     listeners: {
       stdout: (data: Buffer) => {
         const output = data.toString()
@@ -434,7 +434,7 @@ export async function run({
     }
 
     try {
-      core.startGroup('Start Wordpress CI container')
+      core.startGroup('Verify Wordpress CI is up and running')
       core.info(
         `Waiting for Wordpress CI to be available at ${container_url}...`
       )
