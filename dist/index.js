@@ -25640,6 +25640,12 @@ function getConfigs() {
     const db_user = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-user').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-user: ${db_user}`);
     const db_password = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-password').trim();
+    if (db_password === '') {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-password: [EMPTY]`);
+    }
+    else {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-password: [REDACTED]`);
+    }
     // Input(s) for running tests
     const testCommand = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`test-command: ${testCommand}`);
@@ -25713,11 +25719,6 @@ async function _exec(cmd, options = {
 async function _ensureContainerRunning(registry, image_name, image_tag, network, container_options = [], container_name = 'wordpress-ci') {
     const fullImageName = `${registry}/${image_name}:${image_tag}`;
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Ensuring container ${fullImageName} is running...`);
-    // Get variables from environment
-    const wordpressDbHost = process.env['WORDPRESS_DB_HOST'] || 'mysql';
-    const wordpressDbName = process.env['WORDPRESS_DB_NAME'] || 'wordpress';
-    const wordpressDbUser = process.env['WORDPRESS_DB_USER'] || 'wordpress';
-    const wordpressDbPassword = process.env['WORDPRESS_DB_PASSWORD'] || 'wordpress';
     // Using docker command, check if the container is running.
     // If not, start the container in detached mode.
     // This is a placeholder implementation.
@@ -25738,10 +25739,6 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
             `--name="${container_name}"`,
             '--publish="8080:80"',
             `--env="CLEAN_ON_START=yes"`,
-            `--env="WORDPRESS_DB_HOST=${wordpressDbHost}"`,
-            `--env="WORDPRESS_DB_NAME=${wordpressDbName}"`,
-            `--env="WORDPRESS_DB_USER=${wordpressDbUser}"`,
-            `--env="WORDPRESS_DB_PASSWORD=${wordpressDbPassword}"`,
             `--network=${network}`,
             ...container_options
         ];
@@ -25836,7 +25833,12 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
     const startTime = new Date().getTime();
     try {
         const configs = getConfigs();
-        const container_options = [];
+        const container_options = [
+            `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
+            `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
+            `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
+            `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
+        ];
         if (configs.plugins.length > 0) {
             container_options.push(...configs.plugins.map(plugin => `--volume="${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}"`));
         }
@@ -25844,9 +25846,12 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             container_options.push(...configs.themes.map(theme => `--volume="${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}"`));
         }
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Start Wordpress CI container');
+        const container_url = `http://localhost:8080`;
+        process.env['WORDPRESS_CI_URL'] = container_url;
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
         try {
             await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network, container_options);
-            await waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
+            await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
         }
         catch (error) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(`Error ensuring container is running: ${error.message}`);

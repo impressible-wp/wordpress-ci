@@ -74,6 +74,11 @@ function getConfigs(): {
   const db_user = core.getInput('db-user').trim()
   core.debug(`db-user: ${db_user}`)
   const db_password = core.getInput('db-password').trim()
+  if (db_password === '') {
+    core.debug(`db-password: [EMPTY]`)
+  } else {
+    core.debug(`db-password: [REDACTED]`)
+  }
 
   // Input(s) for running tests
   const testCommand = core.getInput('test-command').trim()
@@ -169,13 +174,6 @@ async function _ensureContainerRunning(
   const fullImageName = `${registry}/${image_name}:${image_tag}`
   core.debug(`Ensuring container ${fullImageName} is running...`)
 
-  // Get variables from environment
-  const wordpressDbHost = process.env['WORDPRESS_DB_HOST'] || 'mysql'
-  const wordpressDbName = process.env['WORDPRESS_DB_NAME'] || 'wordpress'
-  const wordpressDbUser = process.env['WORDPRESS_DB_USER'] || 'wordpress'
-  const wordpressDbPassword =
-    process.env['WORDPRESS_DB_PASSWORD'] || 'wordpress'
-
   // Using docker command, check if the container is running.
   // If not, start the container in detached mode.
   // This is a placeholder implementation.
@@ -197,10 +195,6 @@ async function _ensureContainerRunning(
       `--name="${container_name}"`,
       '--publish="8080:80"',
       `--env="CLEAN_ON_START=yes"`,
-      `--env="WORDPRESS_DB_HOST=${wordpressDbHost}"`,
-      `--env="WORDPRESS_DB_NAME=${wordpressDbName}"`,
-      `--env="WORDPRESS_DB_USER=${wordpressDbUser}"`,
-      `--env="WORDPRESS_DB_PASSWORD=${wordpressDbPassword}"`,
       `--network=${network}`,
       ...container_options
     ]
@@ -339,7 +333,12 @@ export async function run({
   try {
     const configs = getConfigs()
 
-    const container_options: string[] = []
+    const container_options: string[] = [
+      `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
+      `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
+      `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
+      `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
+    ]
     if (configs.plugins.length > 0) {
       container_options.push(
         ...configs.plugins.map(
@@ -358,6 +357,9 @@ export async function run({
     }
 
     core.startGroup('Start Wordpress CI container')
+    const container_url = `http://localhost:8080`
+    process.env['WORDPRESS_CI_URL'] = container_url
+    core.info(`Waiting for Wordpress CI to be available at ${container_url}...`)
     try {
       await ensureContainerRunning(
         configs.registry,
@@ -366,7 +368,7 @@ export async function run({
         configs.network,
         container_options
       )
-      await waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
+      await waitForHttpServer(container_url, 10000) // Wait up to 10 seconds
     } catch (error) {
       core.error(
         `Error ensuring container is running: ${(error as Error).message}`

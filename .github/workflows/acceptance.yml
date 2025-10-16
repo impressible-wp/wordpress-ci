@@ -52,8 +52,12 @@ jobs:
           db-user: ${{ env.DB_USER }}
           db-password: ${{ env.DB_PASSWORD }}
           test-command: |
+            # Test variable access
+            echo "WORDPRESS_CI_URL ${WORDPRESS_CI_URL}"
+
             # Running "server-side" commands in the Wordpress CI container
-            wpci-cmd /bin/bash -c "echo 'Current directory: '; pwd; ls -la"
+            echo "Current directory: $(wpci-cmd pwd)"
+            wpci-cmd ls -la
             wpci-cmd wp plugin activate myplugin
 
             # Running "client-side" commands in GitHub Actions runner
@@ -74,8 +78,12 @@ jobs:
           db-password: ${{ env.DB_PASSWORD }}
           themes: ./example/mytheme
           test-command: |
+            # Test variable access
+            echo "WORDPRESS_CI_URL ${WORDPRESS_CI_URL}"
+
             # Running "server-side" commands in the Wordpress CI container
-            wpci-cmd /bin/bash -c "echo 'Current directory: '; pwd; ls -la"
+            echo "Current directory: $(wpci-cmd pwd)"
+            wpci-cmd ls -la
             wpci-cmd theme activate mytheme
 
             # Running "client-side" commands in GitHub Actions runner
@@ -101,11 +109,12 @@ jobs:
             echo "WORDPRESS_CI_URL ${WORDPRESS_CI_URL}"
 
             # Running "server-side" commands in the Wordpress CI container
-            wpci-cmd /bin/bash -c "echo 'Current directory: '; pwd; ls -la"
+            echo "Current directory: $(wpci-cmd pwd)"
+            wpci-cmd ls -la
             wpci-cmd wp plugin activate myplugin
             wpci-cmd wp theme activate mytheme
 
             # Running "client-side" commands in GitHub Actions runner
             composer install
             composer run test
-          test-command-context: ./example/combined
+          test-command-context: ./example/combined_test
