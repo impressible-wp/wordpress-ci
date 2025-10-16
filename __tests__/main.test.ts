@@ -14,12 +14,14 @@ const mockCore = core as jest.Mocked<typeof core>
 function mockRunEnvironment(): runEnvironment {
   const ensureContainerRunning = jest.fn()
   const ensureContainerStopped = jest.fn()
+  const installScript = jest.fn()
   const waitForHttpServer = jest.fn()
   const getContent = jest.fn().mockReturnValue('<html>Mocked Content</html>')
 
   return {
     ensureContainerRunning,
     ensureContainerStopped,
+    installScript,
     waitForHttpServer,
     getContent
   }

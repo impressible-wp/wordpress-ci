@@ -50,8 +50,12 @@ jobs:
           image-tag: ${{ inputs.image_tag }}
           network: ${{ job.services.mysql.network }}
           plugins: ./example/myplugin
-          themes: ./example/mytheme
           test-command: |
+            # Server side commands (bash, wp-cli)
+            server-bash -c "echo 'Current directory: '; pwd; ls -la"
+            server-wp plugin activate myplugin
+
+            # Test runner side commands
             composer install
             composer run test
           test-command-context: ./example/myplugin
@@ -63,9 +67,13 @@ jobs:
           image-name: ${{ inputs.image_name }}
           image-tag: ${{ inputs.image_tag }}
           network: ${{ job.services.mysql.network }}
-          plugins: ./example/myplugin
           themes: ./example/mytheme
           test-command: |
+            # Server side commands (bash, wp-cli)
+            server-bash -c "echo 'Current directory: '; pwd; ls -la"
+            server-wp theme activate mytheme
+
+            # Test runner side commands
             composer install
             composer run test
           test-command-context: ./example/mytheme

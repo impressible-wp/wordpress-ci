@@ -25580,8 +25580,11 @@ __webpack_async_result__();
 /* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(child_process__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(6928);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(9896);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(fs__WEBPACK_IMPORTED_MODULE_3__);
 
 // import * as github from '@actions/github'
+
 
 
 /**
@@ -25774,6 +25777,38 @@ async function _waitForHttpServer(url, timeout) {
     }
 }
 /**
+ * Generates a bash script that proxies commands to the container.
+ *
+ * @param container_command_name The command to run in the container
+ * @param container_name The name of the container
+ *
+ * @returns {string} The bash script content
+ */
+function _proxiedContainerCommandScript(container_name, container_command_name) {
+    return `#!/bin/bash
+
+  docker exec -it ${container_name} ${container_command_name} "$@"
+
+  exit $?
+  `;
+}
+/**
+ * Install a script file with given content if it does not already exist.
+ *
+ * @param script_fullpath The full path to the script file.
+ * @param script_content The content of the script file.
+ * @returns {void}
+ */
+function _installScript(script_fullpath, script_content) {
+    if (fs__WEBPACK_IMPORTED_MODULE_3___default().existsSync(script_fullpath)) {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Script ${script_fullpath} already exists, skipping installation.`);
+        return;
+    }
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Installing script to ${script_fullpath}...`);
+    // Write the script content to the file and make it executable
+    fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(script_fullpath, script_content, { mode: 0o755 });
+}
+/**
  * Get the content of a URL.
  *
  * @param url
@@ -25786,7 +25821,7 @@ function _getContent(url) {
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, waitForHttpServer = _waitForHttpServer, getContent = _getContent } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer, getContent = _getContent } = {}) {
     const startTime = new Date().getTime();
     try {
         const configs = getConfigs();
@@ -25811,10 +25846,19 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         // core.info(`The event payload: ${payload}`)
         // Download the frontpage on localhost:8080
         let content = '';
+        const container_name = 'wordpress-ci';
         try {
             await waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
             content = getContent('http://localhost:8080');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Frontpage content: ${content}`);
+            // Install proxied wp and composer commands
+            installScript('/usr/local/bin/server-bash', `#!/bin/bash
+
+        docker exec -it ${container_name} bash "$@"
+        exit $?
+        `);
+            installScript('/usr/local/bin/server-wp', _proxiedContainerCommandScript(container_name, 'wp'));
+            installScript('/usr/local/bin/server-composer', _proxiedContainerCommandScript(container_name, 'composer'));
             // change to the test command context directory
             process.chdir(configs.testCommandContext);
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
