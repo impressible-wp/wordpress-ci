@@ -82,3 +82,30 @@ jobs:
             composer install
             composer run test
           test-command-context: ./example/mytheme
+
+      - name: Combined Test
+        uses: ./
+        with:
+          registry: ${{ inputs.registry }}
+          image-name: ${{ inputs.image-name }}
+          image-tag: ${{ inputs.image-tag }}
+          network: ${{ job.services.mysql.network }}
+          db-host: ${{ env.DB_HOST }}
+          db-name: ${{ env.DB_NAME }}
+          db-user: ${{ env.DB_USER }}
+          db-password: ${{ env.DB_PASSWORD }}
+          plugins: ./example/myplugin
+          themes: ./example/mytheme
+          test-command: |
+            # Test variable access
+            echo "WORDPRESS_CI_URL ${WORDPRESS_CI_URL}"
+
+            # Running "server-side" commands in the Wordpress CI container
+            wpci-cmd /bin/bash -c "echo 'Current directory: '; pwd; ls -la"
+            wpci-cmd wp plugin activate myplugin
+            wpci-cmd wp theme activate mytheme
+
+            # Running "client-side" commands in GitHub Actions runner
+            composer install
+            composer run test
+          test-command-context: ./example/combined
