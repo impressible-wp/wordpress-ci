@@ -87,7 +87,7 @@ jobs:
             # Running "server-side" commands in the Wordpress CI container
             echo "Current directory: $(wpci-cmd pwd)"
             wpci-cmd ls -la
-            wpci-cmd theme activate mytheme
+            wpci-cmd wp theme activate mytheme
 
             # Running "client-side" commands in GitHub Actions runner
             composer install
