@@ -51,11 +51,11 @@ jobs:
           network: ${{ job.services.mysql.network }}
           plugins: ./example/myplugin
           test-command: |
-            # Server side commands (bash, wp-cli)
-            server-bash -c "echo 'Current directory: '; pwd; ls -la"
-            server-wp plugin activate myplugin
+            # Running "server-side" commands in the Wordpress CI container
+            wpci-cmd /bin/bash -c "echo 'Current directory: '; pwd; ls -la"
+            wpci-cmd wp plugin activate myplugin
 
-            # Test runner side commands
+            # Running "client-side" commands in GitHub Actions runner
             composer install
             composer run test
           test-command-context: ./example/myplugin
@@ -69,11 +69,11 @@ jobs:
           network: ${{ job.services.mysql.network }}
           themes: ./example/mytheme
           test-command: |
-            # Server side commands (bash, wp-cli)
-            server-bash -c "echo 'Current directory: '; pwd; ls -la"
-            server-wp theme activate mytheme
+            # Running "server-side" commands in the Wordpress CI container
+            wpci-cmd /bin/bash -c "echo 'Current directory: '; pwd; ls -la"
+            wpci-cmd theme activate mytheme
 
-            # Test runner side commands
+            # Running "client-side" commands in GitHub Actions runner
             composer install
             composer run test
           test-command-context: ./example/mytheme

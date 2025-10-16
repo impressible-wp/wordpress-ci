@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 // import * as github from '@actions/github'
-import {exec, execSync} from 'child_process'
+import {exec} from 'child_process'
 import {basename} from 'path'
 import fs from 'fs'
 
@@ -250,7 +250,7 @@ async function _waitForHttpServer(url: string, timeout: number): Promise<void> {
  */
 function _proxiedContainerCommandScript(
   container_name: string,
-  container_command_name: string
+  container_command_name = ''
 ): string {
   return `#!/bin/bash
 
@@ -269,25 +269,15 @@ function _proxiedContainerCommandScript(
  */
 function _installScript(script_fullpath: string, script_content: string): void {
   if (fs.existsSync(script_fullpath)) {
-    core.debug(
+    core.info(
       `Script ${script_fullpath} already exists, skipping installation.`
     )
     return
   }
-  core.debug(`Installing script to ${script_fullpath}...`)
+  core.info(`Installing script to ${script_fullpath}...`)
 
   // Write the script content to the file and make it executable
   fs.writeFileSync(script_fullpath, script_content, {mode: 0o755})
-}
-
-/**
- * Get the content of a URL.
- *
- * @param url
- * @returns
- */
-function _getContent(url: string): string {
-  return execSync(`curl -s ${url}`).toString()
 }
 
 /**
@@ -308,7 +298,6 @@ export type runEnvironment = {
   ) => Promise<{stdout: string; stderr: string}>
   installScript?: (script_fullpath: string, script_content: string) => void
   waitForHttpServer?: (url: string, timeout: number) => Promise<void>
-  getContent?: (url: string) => string
 }
 
 /**
@@ -319,13 +308,11 @@ export async function run({
   ensureContainerRunning = _ensureContainerRunning,
   ensureContainerStopped = _ensureContainerStopped,
   installScript = _installScript,
-  waitForHttpServer = _waitForHttpServer,
-  getContent = _getContent
+  waitForHttpServer = _waitForHttpServer
 }: runEnvironment = {}): Promise<void> {
   const startTime = new Date().getTime()
   try {
     const configs = getConfigs()
-    core.debug(`Test command was: ${configs.testCommand}`)
 
     const container_options: string[] = []
     if (configs.plugins.length > 0) {
@@ -345,6 +332,7 @@ export async function run({
       )
     }
 
+    core.startGroup('Start Wordpress CI container')
     try {
       await ensureContainerRunning(
         configs.registry,
@@ -353,6 +341,7 @@ export async function run({
         configs.network,
         container_options
       )
+      await waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
     } catch (error) {
       core.error(
         `Error ensuring container is running: ${(error as Error).message}`
@@ -361,46 +350,35 @@ export async function run({
         `Error ensuring container is running: ${(error as Error).message}`
       )
       throw error
+    } finally {
+      core.endGroup()
     }
 
-    // Get the JSON webhook payload for the event that triggered the workflow
-    // const payload = JSON.stringify(github.context.payload, undefined, 2)
-    // core.info(`The event payload: ${payload}`)
+    // Install proxy scripts
+    const container_name = 'wordpress-ci'
+    core.startGroup(
+      'Setup proxy script to run command in Wordpress CI container'
+    )
+    installScript(
+      '/usr/local/bin/wpci-cmd',
+      _proxiedContainerCommandScript(container_name)
+    )
+    core.endGroup()
 
     // Download the frontpage on localhost:8080
-    let content = ''
-    const container_name = 'wordpress-ci'
     try {
-      await waitForHttpServer('http://localhost:8080', 10000) // Wait up to 10 seconds
-      content = getContent('http://localhost:8080')
-      core.info(`Frontpage content: ${content}`)
-
-      // Install proxied wp and composer commands
-      installScript(
-        '/usr/local/bin/server-bash',
-        `#!/bin/bash
-
-        docker exec -it ${container_name} bash "$@"
-        exit $?
-        `
-      )
-      installScript(
-        '/usr/local/bin/server-wp',
-        _proxiedContainerCommandScript(container_name, 'wp')
-      )
-      installScript(
-        '/usr/local/bin/server-composer',
-        _proxiedContainerCommandScript(container_name, 'composer')
-      )
-
       // change to the test command context directory
       process.chdir(configs.testCommandContext)
-      core.info(`Changed directory to ${configs.testCommandContext}`)
 
       // run the test command
       if (configs.testCommand) {
-        core.info(`Running test command: ${configs.testCommand}`)
-        execSync(configs.testCommand, {stdio: 'inherit'})
+        core.startGroup('Command')
+        core.info(configs.testCommand)
+        core.endGroup()
+
+        core.info(`Changed directory to ${configs.testCommandContext}`)
+        core.startGroup('Run Test Command')
+        await _exec([configs.testCommand])
       } else {
         core.info('No test command provided, skipping test execution.')
       }
@@ -408,10 +386,14 @@ export async function run({
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
     } finally {
+      core.endGroup()
+
+      core.startGroup('Stop the Wordpress CI container')
       await ensureContainerStopped('wordpress-ci')
+      core.endGroup()
     }
 
-    core.setOutput('stdout', content)
+    core.setOutput('stdout', '')
     core.setOutput('stderr', '')
     core.setOutput('time', new Date().getTime() - startTime)
   } catch (error) {

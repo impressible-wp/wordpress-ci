@@ -25784,7 +25784,7 @@ async function _waitForHttpServer(url, timeout) {
  *
  * @returns {string} The bash script content
  */
-function _proxiedContainerCommandScript(container_name, container_command_name) {
+function _proxiedContainerCommandScript(container_name, container_command_name = '') {
     return `#!/bin/bash
 
   docker exec -it ${container_name} ${container_command_name} "$@"
@@ -25801,31 +25801,21 @@ function _proxiedContainerCommandScript(container_name, container_command_name) 
  */
 function _installScript(script_fullpath, script_content) {
     if (fs__WEBPACK_IMPORTED_MODULE_3___default().existsSync(script_fullpath)) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Script ${script_fullpath} already exists, skipping installation.`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Script ${script_fullpath} already exists, skipping installation.`);
         return;
     }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Installing script to ${script_fullpath}...`);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Installing script to ${script_fullpath}...`);
     // Write the script content to the file and make it executable
     fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(script_fullpath, script_content, { mode: 0o755 });
-}
-/**
- * Get the content of a URL.
- *
- * @param url
- * @returns
- */
-function _getContent(url) {
-    return (0,child_process__WEBPACK_IMPORTED_MODULE_1__.execSync)(`curl -s ${url}`).toString();
 }
 /**
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer, getContent = _getContent } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer } = {}) {
     const startTime = new Date().getTime();
     try {
         const configs = getConfigs();
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Test command was: ${configs.testCommand}`);
         const container_options = [];
         if (configs.plugins.length > 0) {
             container_options.push(...configs.plugins.map(plugin => `--volume="${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}"`));
@@ -25833,39 +25823,36 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         if (configs.themes.length > 0) {
             container_options.push(...configs.themes.map(theme => `--volume="${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}"`));
         }
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Start Wordpress CI container');
         try {
             await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network, container_options);
+            await waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
         }
         catch (error) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(`Error ensuring container is running: ${error.message}`);
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error ensuring container is running: ${error.message}`);
             throw error;
         }
-        // Get the JSON webhook payload for the event that triggered the workflow
-        // const payload = JSON.stringify(github.context.payload, undefined, 2)
-        // core.info(`The event payload: ${payload}`)
-        // Download the frontpage on localhost:8080
-        let content = '';
+        finally {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+        }
+        // Install proxy scripts
         const container_name = 'wordpress-ci';
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Setup proxy script to run command in Wordpress CI container');
+        installScript('/usr/local/bin/wpci-cmd', _proxiedContainerCommandScript(container_name));
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+        // Download the frontpage on localhost:8080
         try {
-            await waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
-            content = getContent('http://localhost:8080');
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Frontpage content: ${content}`);
-            // Install proxied wp and composer commands
-            installScript('/usr/local/bin/server-bash', `#!/bin/bash
-
-        docker exec -it ${container_name} bash "$@"
-        exit $?
-        `);
-            installScript('/usr/local/bin/server-wp', _proxiedContainerCommandScript(container_name, 'wp'));
-            installScript('/usr/local/bin/server-composer', _proxiedContainerCommandScript(container_name, 'composer'));
             // change to the test command context directory
             process.chdir(configs.testCommandContext);
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
             // run the test command
             if (configs.testCommand) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Running test command: ${configs.testCommand}`);
-                (0,child_process__WEBPACK_IMPORTED_MODULE_1__.execSync)(configs.testCommand, { stdio: 'inherit' });
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Command');
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(configs.testCommand);
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Run Test Command');
+                await _exec([configs.testCommand]);
             }
             else {
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('No test command provided, skipping test execution.');
@@ -25876,9 +25863,12 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             throw error;
         }
         finally {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Stop the Wordpress CI container');
             await ensureContainerStopped('wordpress-ci');
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
         }
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', content);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', '');
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stderr', '');
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('time', new Date().getTime() - startTime);
     }

@@ -16,14 +16,12 @@ function mockRunEnvironment(): runEnvironment {
   const ensureContainerStopped = jest.fn()
   const installScript = jest.fn()
   const waitForHttpServer = jest.fn()
-  const getContent = jest.fn().mockReturnValue('<html>Mocked Content</html>')
 
   return {
     ensureContainerRunning,
     ensureContainerStopped,
     installScript,
-    waitForHttpServer,
-    getContent
+    waitForHttpServer
   }
 }
 

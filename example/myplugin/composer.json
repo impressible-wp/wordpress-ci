@@ -10,7 +10,7 @@
         }
     ],
     "scripts": {
-        "test": "echo test"
+        "test": "echo plugin test"
     },
     "require-dev": {
         "codeception/codeception": "^5.3"
