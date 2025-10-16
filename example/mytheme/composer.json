@@ -1,0 +1,18 @@
+{
+    "name": "impressible/wordpress-ci-example-theme",
+    "description": "An example project to show case wordpress-ci with.",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Koala Yeung",
+            "email": "koalay@gmail.com"
+        }
+    ],
+    "scripts": {
+        "test": "echo theme test"
+    },
+    "require-dev": {
+        "codeception/codeception": "^5.3"
+    }
+}

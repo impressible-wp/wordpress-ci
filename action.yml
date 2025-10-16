@@ -1,0 +1,46 @@
+name: 'Wordpress CI'
+description: 'Wordpress Plugin or Theme CI environment'
+author: 'Impressible'
+inputs:
+  registry:
+    description: 'The container registry to pull the image from'
+    required: true
+    default: 'ghcr.io'
+  image-name:
+    description: 'The name of the image to build'
+    required: true
+    default: 'impressible-wp/wordpress-ci'
+  image-tag:
+    description: 'The tag of the image to build'
+    required: true
+    default: 'latest'
+  network:
+    description: 'The Docker network to use. Must match that of the database container.'
+    required: true
+    default: ''
+  plugins:
+    description: 'List of directories of plugins to test, one per line'
+    required: false
+    default: ''
+  themes:
+    description: 'List of directories of themes to test, one per line'
+    required: false
+    default: ''
+  test-command:
+    description: 'Command to use to run tests'
+    required: true
+    default: 'echo "No test command specified"'
+  test-command-context:
+    description: 'Directory to run the test command in'
+    required: false
+    default: '.'
+outputs:
+  stdout:
+    description: 'The standard output of the action'
+  stderr:
+    description: 'The standard error output of the action'
+  time:
+    description: 'The time the action was run'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

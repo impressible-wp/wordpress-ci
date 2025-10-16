@@ -1,0 +1,19 @@
+/*
+ * Theme Name: My Theme
+ * Description: An example WordPress theme.
+ * Version: 1.0.0
+ * Author: Koala Yeung <koalay@gmail.com>
+ * Author URI: https://github.com/yookoala
+ * License: MIT
+ * License URI: https://opensource.org/licenses/MIT
+ */
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}

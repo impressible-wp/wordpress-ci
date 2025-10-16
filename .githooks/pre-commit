@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Check if there are changes in the src directory
+if git diff --cached --quiet -- src/; then
+  echo "No change in src, skip"
+  exit 0
+fi
+
+# Require to have uncommitted in src directory.
+# If there is, abort commiting to prevent inconsistencies between
+# committed src and built dist.
+if ! git diff --quiet src/; then
+  echo "You have uncommitted changes in the src directory. Please commit or stash them before committing."
+  exit 1
+fi
+
+# Build the files for distribution
+if ! npm run build; then
+  echo "Build failed, aborting commit."
+  exit 1
+fi
+
+# Add the built dist folder
+git add ./dist

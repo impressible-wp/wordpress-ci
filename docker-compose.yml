@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  wp-plugin-ci:
+  wordpress-ci:
     build:
-      image: wp-plugin-ci:${PHP_VERSION:-8.1}
-      context: .
-      dockerfile: Dockerfile
+      image: wordpress-ci:${PHP_VERSION:-8.1}
+      context: ./docker
+      dockerfile: ./Dockerfile
       args:
         PHP_VERSION: ${PHP_VERSION:-8.1}
-    container_name: wp-plugin-ci
+    container_name: wordpress-ci
     depends_on:
       - db
     environment:
@@ -17,15 +17,16 @@ services:
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
     volumes:
-      - .:/myplugin
+      - ./example/myplugin:/var/www/html/wp-content/plugins/myplugin
+      - ./example/mytheme:/var/www/html/wp-content/themes/mytheme
     ports:
-      - "8080:80"
+      - '8080:80'
     networks:
       - network
 
   db:
     image: mariadb:latest
-    container_name: wp-plugin-ci-db
+    container_name: wordpress-ci-db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -33,7 +34,7 @@ services:
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
     ports:
-      - "3306:3306"
+      - '3306:3306'
     networks:
       - network
 

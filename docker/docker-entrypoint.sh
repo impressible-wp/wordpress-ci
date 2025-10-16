@@ -39,6 +39,11 @@ while ! wp db check --allow-root --quiet; do
     fi
 done
 
+# Check if the database should be clean on start
+if [ "$CLEAN_ON_START" != "" ]; then
+  wp db clean --yes
+fi
+
 # Check if Wordpress is already installed.
 if wp core is-installed --allow-root --quiet; then
     echo "Wordpress is already installed, skipping setup."
@@ -47,7 +52,7 @@ else
     echo "Wordpress is not installed yet. Using wp-cli to perform unattended installation..."
     wp core install \
         --url="http://localhost" \
-        --title="${WORDPRESS_TITLE:-WordpressPluginCI}" \
+        --title="${WORDPRESS_TITLE:-WordpressCI}" \
         --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
         --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
         --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
