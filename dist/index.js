@@ -25598,16 +25598,23 @@ __webpack_async_result__();
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
+ * @property {string} db_host - The database host.
+ * @property {string} db_name - The database name.
+ * @property {string} db_user - The database user.
+ * @property {string} db_password - The database password.
  * @property {string} testCommand - The test command to run.
  * @property {string} testCommandContext - The build context path.
  */
 function getConfigs() {
+    // Input(s) for getting the Wordpress CI container image
     const registry = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('registry').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`registry: ${registry}`);
     const image_name = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('image-name').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`image-name: ${image_name}`);
     const image_tag = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('image-tag').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`image-tag: ${image_tag}`);
+    // Input(s) for configuring the Wordpress CI container
+    // before starting it
     const network = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('network').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`network: ${network}`);
     if (network === '') {
@@ -25625,6 +25632,15 @@ function getConfigs() {
         .map(t => t.trim())
         .filter(t => t);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`themes: ${JSON.stringify(themes)}`);
+    // Input(s) for the installation of Wordpress in the container
+    const db_host = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-host').trim();
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-host: ${db_host}`);
+    const db_name = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-name').trim();
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-name: ${db_name}`);
+    const db_user = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-user').trim();
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-user: ${db_user}`);
+    const db_password = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-password').trim();
+    // Input(s) for running tests
     const testCommand = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`test-command: ${testCommand}`);
     let testCommandContext = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command-context').trim();
@@ -25638,6 +25654,10 @@ function getConfigs() {
         image_tag,
         network,
         plugins,
+        db_host,
+        db_name,
+        db_user,
+        db_password,
         themes,
         testCommand,
         testCommandContext

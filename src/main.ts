@@ -15,6 +15,10 @@ import fs from 'fs'
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
+ * @property {string} db_host - The database host.
+ * @property {string} db_name - The database name.
+ * @property {string} db_user - The database user.
+ * @property {string} db_password - The database password.
  * @property {string} testCommand - The test command to run.
  * @property {string} testCommandContext - The build context path.
  */
@@ -22,12 +26,17 @@ function getConfigs(): {
   registry: string
   image_name: string
   image_tag: string
+  db_host: string
+  db_name: string
+  db_user: string
+  db_password: string
   network: string
   plugins: string[]
   themes: string[]
   testCommand: string
   testCommandContext: string
 } {
+  // Input(s) for getting the Wordpress CI container image
   const registry = core.getInput('registry').trim()
   core.debug(`registry: ${registry}`)
   const image_name = core.getInput('image-name').trim()
@@ -35,6 +44,8 @@ function getConfigs(): {
   const image_tag = core.getInput('image-tag').trim()
   core.debug(`image-tag: ${image_tag}`)
 
+  // Input(s) for configuring the Wordpress CI container
+  // before starting it
   const network = core.getInput('network').trim()
   core.debug(`network: ${network}`)
   if (network === '') {
@@ -55,6 +66,16 @@ function getConfigs(): {
     .filter(t => t)
   core.debug(`themes: ${JSON.stringify(themes)}`)
 
+  // Input(s) for the installation of Wordpress in the container
+  const db_host = core.getInput('db-host').trim()
+  core.debug(`db-host: ${db_host}`)
+  const db_name = core.getInput('db-name').trim()
+  core.debug(`db-name: ${db_name}`)
+  const db_user = core.getInput('db-user').trim()
+  core.debug(`db-user: ${db_user}`)
+  const db_password = core.getInput('db-password').trim()
+
+  // Input(s) for running tests
   const testCommand = core.getInput('test-command').trim()
   core.debug(`test-command: ${testCommand}`)
 
@@ -70,6 +91,10 @@ function getConfigs(): {
     image_tag,
     network,
     plugins,
+    db_host,
+    db_name,
+    db_user,
+    db_password,
     themes,
     testCommand,
     testCommandContext

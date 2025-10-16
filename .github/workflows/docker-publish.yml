@@ -87,7 +87,6 @@ jobs:
     needs: build
     uses: ./.github/workflows/acceptance.yml
     with:
-      build_result: ${{ needs.build.result }}
       registry: ghcr.io
-      image_name: ${{ github.repository }}
-      image_tag: sha256-${{ github.sha }}-latest
+      image-name: ${{ github.repository }}
+      image-tag: sha256-${{ github.sha }}-latest

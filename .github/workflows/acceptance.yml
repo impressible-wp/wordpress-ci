@@ -6,13 +6,10 @@ on:
       registry:
         required: true
         type: string
-      image_name:
+      image-name:
         required: true
         type: string
-      build_result:
-        required: false
-        type: string
-      image_tag:
+      image-tag:
         required: false
         type: string
         default: 'latest'
@@ -24,18 +21,18 @@ jobs:
     env:
       # The hostname should match the MySQL / MariaDB
       # service name defined below
-      WORDPRESS_DB_HOST: mysql
-      WORDPRESS_DB_NAME: wordpress
-      WORDPRESS_DB_USER: username
-      WORDPRESS_DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_NAME: wordpress
+      DB_USER: username
+      DB_PASSWORD: password
     services:
       mysql:
         image: mariadb:12
         env:
           MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
-          MARIADB_DATABASE: ${{ env.WORDPRESS_DB_NAME }}
-          MARIADB_USER: ${{ env.WORDPRESS_DB_USER }}
-          MARIADB_PASSWORD: ${{ env.WORDPRESS_DB_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.DB_NAME }}
+          MARIADB_USER: ${{ env.DB_USER }}
+          MARIADB_PASSWORD: ${{ env.DB_PASSWORD }}
         ports:
           - 3306:3306
     steps:
@@ -46,10 +43,14 @@ jobs:
         uses: ./
         with:
           registry: ${{ inputs.registry }}
-          image-name: ${{ inputs.image_name }}
-          image-tag: ${{ inputs.image_tag }}
+          image-name: ${{ inputs.image-name }}
+          image-tag: ${{ inputs.image-tag }}
           network: ${{ job.services.mysql.network }}
           plugins: ./example/myplugin
+          db-host: ${{ env.DB_HOST }}
+          db-name: ${{ env.DB_NAME }}
+          db-user: ${{ env.DB_USER }}
+          db-password: ${{ env.DB_PASSWORD }}
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
             wpci-cmd /bin/bash -c "echo 'Current directory: '; pwd; ls -la"
@@ -64,9 +65,13 @@ jobs:
         uses: ./
         with:
           registry: ${{ inputs.registry }}
-          image-name: ${{ inputs.image_name }}
-          image-tag: ${{ inputs.image_tag }}
+          image-name: ${{ inputs.image-name }}
+          image-tag: ${{ inputs.image-tag }}
           network: ${{ job.services.mysql.network }}
+          db-host: ${{ env.DB_HOST }}
+          db-name: ${{ env.DB_NAME }}
+          db-user: ${{ env.DB_USER }}
+          db-password: ${{ env.DB_PASSWORD }}
           themes: ./example/mytheme
           test-command: |
             # Running "server-side" commands in the Wordpress CI container

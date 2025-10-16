@@ -2,18 +2,22 @@ name: 'Wordpress CI'
 description: 'Wordpress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
+  # Input(s) for getting the Wordpress CI container image
   registry:
     description: 'The container registry to pull the image from'
-    required: true
+    required: false
     default: 'ghcr.io'
   image-name:
     description: 'The name of the image to build'
-    required: true
+    required: false
     default: 'impressible-wp/wordpress-ci'
   image-tag:
     description: 'The tag of the image to build'
-    required: true
+    required: false
     default: 'latest'
+
+  # Input(s) for configuring the Wordpress CI container
+  # before starting it
   network:
     description: 'The Docker network to use. Must match that of the database container.'
     required: true
@@ -26,6 +30,26 @@ inputs:
     description: 'List of directories of themes to test, one per line'
     required: false
     default: ''
+
+  # Input(s) for the installation of Wordpress in the container
+  db-host:
+    description: 'The hostname of the MySQL/MariaDB service container'
+    required: false
+    default: 'mysql'
+  db-name:
+    description: 'The name of the database to use'
+    required: false
+    default: 'wordpress'
+  db-user:
+    description: 'The database user to connect as'
+    required: false
+    default: 'username'
+  db-password:
+    description: 'The password for the database user'
+    required: false
+    default: 'password'
+
+  # Input(s) for running tests
   test-command:
     description: 'Command to use to run tests'
     required: true
