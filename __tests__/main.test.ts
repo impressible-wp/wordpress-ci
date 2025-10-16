@@ -16,12 +16,14 @@ function mockRunEnvironment(): runEnvironment {
   const ensureContainerStopped = jest.fn()
   const installScript = jest.fn()
   const waitForHttpServer = jest.fn()
+  const _exec = jest.fn().mockResolvedValue({stdout: 'test output', stderr: ''})
 
   return {
     ensureContainerRunning,
     ensureContainerStopped,
     installScript,
-    waitForHttpServer
+    waitForHttpServer,
+    _exec
   }
 }
 
@@ -101,10 +103,10 @@ describe('action', () => {
         '--env="WORDPRESS_DB_NAME=some-db-name"',
         '--env="WORDPRESS_DB_USER=some-db-user"',
         '--env="WORDPRESS_DB_PASSWORD=some-db-password"',
-        '--volume="./plugin1:/var/www/html/wp-content/plugins/plugin1"',
-        '--volume="./plugin2:/var/www/html/wp-content/plugins/plugin2"',
-        '--volume="./theme1:/var/www/html/wp-content/themes/theme1"',
-        '--volume="./theme2:/var/www/html/wp-content/themes/theme2"'
+        '--volume=./plugin1:/var/www/html/wp-content/plugins/plugin1',
+        '--volume=./plugin2:/var/www/html/wp-content/plugins/plugin2',
+        '--volume=./theme1:/var/www/html/wp-content/themes/theme1',
+        '--volume=./theme2:/var/www/html/wp-content/themes/theme2'
       ]
     )
 

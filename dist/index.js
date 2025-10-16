@@ -25843,8 +25843,8 @@ __webpack_async_result__();
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(7484);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5317);
-/* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(child_process__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5236);
+/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_exec__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(6928);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(9896);
@@ -25852,8 +25852,8 @@ __webpack_async_result__();
 /* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(4801);
 /* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__nccwpck_require__.n(ansi_colors__WEBPACK_IMPORTED_MODULE_4__);
 
-// import * as github from '@actions/github'
 
+// import * as github from '@actions/github'
 
 
 
@@ -25941,7 +25941,7 @@ function getConfigs() {
 }
 /**
  * A simple function to execute command and pipe outputs
- * to core.
+ * to core using @actions/exec for GitHub Actions compatibility.
  *
  * @param {string[]} cmd - The command to execute.
  * @returns {Promise<{stdout: string, stderr: string}>}
@@ -25949,41 +25949,67 @@ function getConfigs() {
 async function _exec(cmd, options = {
     logStdout: true,
     logStderr: true,
-    showCommand: true
+    showCommand: false,
+    useTty: true
 }) {
-    return new Promise((resolve, reject) => {
-        // Show the command being executed
-        const cmdStr = cmd.join(' ');
-        if (options.showCommand) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`> ${ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(cmdStr)}`);
+    // Show the command being executed
+    const cmdStr = cmd.join(' ');
+    if (options.showCommand) {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`> ${ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(cmdStr)}`);
+    }
+    const [command, ...args] = cmd;
+    if (!command) {
+        throw new Error('No command provided');
+    }
+    let stdout = '';
+    let stderr = '';
+    const execOptions = {
+        silent: !options.logStdout, // If logStdout is false, run silently
+        listeners: {
+            stdout: (data) => {
+                const output = data.toString();
+                stdout += output;
+                if (options.logStdout) {
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(output.trim());
+                }
+            },
+            stderr: (data) => {
+                const output = data.toString();
+                stderr += output;
+                if (options.logStderr) {
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(output.trim()));
+                }
+            }
         }
-        const subprocess = (0,child_process__WEBPACK_IMPORTED_MODULE_1__.exec)(cmdStr);
-        let stdout = '';
-        let stderr = '';
-        subprocess?.stdout?.on('data', (data) => {
-            stdout += data;
-            if (options.logStdout) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
-            }
-        });
-        subprocess?.stderr?.on('data', (data) => {
-            stderr += data;
-            if (options.logStderr) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(data.trim()));
-            }
-        });
-        subprocess.on('exit', code => {
-            if (code === 0) {
-                resolve({
-                    stdout,
-                    stderr
-                });
-            }
-            else {
-                reject(new Error(`Command failed: ${cmd.join(' ')}\nExit code: ${code}\nError: ${stderr}`));
-            }
-        });
+    };
+    try {
+        const exitCode = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec(command, args, execOptions);
+        if (exitCode === 0) {
+            return { stdout, stderr };
+        }
+        else {
+            throw new Error(`Command failed: ${cmdStr}\nExit code: ${exitCode}\nStderr: ${stderr}`);
+        }
+    }
+    catch (error) {
+        throw new Error(`Command failed: ${cmdStr}\nError: ${error instanceof Error ? error.message : String(error)}\nStderr: ${stderr}`);
+    }
+}
+async function _shellExec(script, options = {
+    logStdout: true,
+    logStderr: true,
+    showCommand: false,
+    useTty: true
+}) {
+    // Write the script to a temporary file
+    // Generate a unique temporary file name
+    const tmpScriptPath = `/tmp/temp-script-${Date.now()}.sh`;
+    fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(tmpScriptPath, script, {
+        mode: 0o644
     });
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Executing script: ${script}\n`);
+    // Execute the script using bash
+    return _exec(['/bin/bash', '-e', tmpScriptPath], options);
 }
 /**
  * Make sure the container mentioned is running in the background.
@@ -26012,8 +26038,8 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Container ${fullImageName} is not running. Starting it...`);
         const options = [
             '--detach',
-            `--name="${container_name}"`,
-            '--publish="8080:80"',
+            `--name=${container_name}`,
+            '--publish=8080:80',
             `--env="CLEAN_ON_START=yes"`,
             `--network=${network}`,
             ...container_options
@@ -26106,6 +26132,7 @@ function _installScript(script_fullpath, script_content) {
  */
 async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer } = {}) {
     const startTime = new Date().getTime();
+    let commandOutput = { stdout: '', stderr: '' };
     try {
         const configs = getConfigs();
         const container_options = [
@@ -26115,22 +26142,31 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
         ];
         if (configs.plugins.length > 0) {
-            container_options.push(...configs.plugins.map(plugin => `--volume="${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}"`));
+            container_options.push(...configs.plugins.map(plugin => `--volume=${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}`));
         }
         if (configs.themes.length > 0) {
-            container_options.push(...configs.themes.map(theme => `--volume="${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}"`));
+            container_options.push(...configs.themes.map(theme => `--volume=${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}`));
         }
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Start Wordpress CI container');
         const container_url = `http://localhost:8080`;
         process.env['WORDPRESS_CI_URL'] = container_url;
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
         try {
             await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network, container_options);
+        }
+        catch (error) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error starting container: ${error.message}`);
+            throw error;
+        }
+        finally {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+        }
+        try {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Start Wordpress CI container');
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
             await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
         }
         catch (error) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(`Error ensuring container is running: ${error.message}`);
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error ensuring container is running: ${error.message}`);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
             throw error;
         }
         finally {
@@ -26152,7 +26188,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(configs.testCommand);
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Test Command Result');
-                await _exec([configs.testCommand]);
+                commandOutput = (await _shellExec(configs.testCommand));
             }
             else {
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('No test command provided, skipping test execution.');
@@ -26168,8 +26204,8 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             await ensureContainerStopped('wordpress-ci');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
         }
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', '');
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stderr', '');
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', commandOutput.stdout);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stderr', commandOutput.stderr);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('time', new Date().getTime() - startTime);
     }
     catch (error) {

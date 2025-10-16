@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
+import * as exec from '@actions/exec'
 // import * as github from '@actions/github'
-import {exec} from 'child_process'
 import {basename} from 'path'
 import fs from 'fs'
 import c from 'ansi-colors'
@@ -109,7 +109,7 @@ function getConfigs(): {
 
 /**
  * A simple function to execute command and pipe outputs
- * to core.
+ * to core using @actions/exec for GitHub Actions compatibility.
  *
  * @param {string[]} cmd - The command to execute.
  * @returns {Promise<{stdout: string, stderr: string}>}
@@ -120,49 +120,89 @@ async function _exec(
     logStdout: boolean
     logStderr: boolean
     showCommand?: boolean
+    useTty?: boolean
   } = {
     logStdout: true,
     logStderr: true,
-    showCommand: true
+    showCommand: false,
+    useTty: true
   }
 ): Promise<{stdout: string; stderr: string}> {
-  return new Promise((resolve, reject) => {
-    // Show the command being executed
-    const cmdStr = cmd.join(' ')
-    if (options.showCommand) {
-      core.info(`> ${c.blue(cmdStr)}`)
-    }
+  // Show the command being executed
+  const cmdStr = cmd.join(' ')
+  if (options.showCommand) {
+    core.info(`> ${c.blue(cmdStr)}`)
+  }
 
-    const subprocess = exec(cmdStr)
-    let stdout = ''
-    let stderr = ''
-    subprocess?.stdout?.on('data', (data: string) => {
-      stdout += data
-      if (options.logStdout) {
-        core.info(data.trim())
+  const [command, ...args] = cmd
+  if (!command) {
+    throw new Error('No command provided')
+  }
+
+  let stdout = ''
+  let stderr = ''
+
+  const execOptions: exec.ExecOptions = {
+    silent: !options.logStdout, // If logStdout is false, run silently
+    listeners: {
+      stdout: (data: Buffer) => {
+        const output = data.toString()
+        stdout += output
+        if (options.logStdout) {
+          core.info(output.trim())
+        }
+      },
+      stderr: (data: Buffer) => {
+        const output = data.toString()
+        stderr += output
+        if (options.logStderr) {
+          core.info(c.magenta(output.trim()))
+        }
       }
-    })
-    subprocess?.stderr?.on('data', (data: string) => {
-      stderr += data
-      if (options.logStderr) {
-        core.info(c.magenta(data.trim()))
-      }
-    })
-    subprocess.on('exit', code => {
-      if (code === 0) {
-        resolve({
-          stdout,
-          stderr
-        })
-      } else {
-        reject(
-          new Error(
-            `Command failed: ${cmd.join(' ')}\nExit code: ${code}\nError: ${stderr}`
-          )
-        )
-      }
-    })
+    }
+  }
+
+  try {
+    const exitCode = await exec.exec(command, args, execOptions)
+    if (exitCode === 0) {
+      return {stdout, stderr}
+    } else {
+      throw new Error(
+        `Command failed: ${cmdStr}\nExit code: ${exitCode}\nStderr: ${stderr}`
+      )
+    }
+  } catch (error) {
+    throw new Error(
+      `Command failed: ${cmdStr}\nError: ${error instanceof Error ? error.message : String(error)}\nStderr: ${stderr}`
+    )
+  }
+}
+
+async function _shellExec(
+  script: string,
+  options: {
+    logStdout: boolean
+    logStderr: boolean
+    showCommand?: boolean
+    useTty?: boolean
+  } = {
+    logStdout: true,
+    logStderr: true,
+    showCommand: false,
+    useTty: true
+  }
+): Promise<{stdout: string; stderr: string}> {
+  // Write the script to a temporary file
+  // Generate a unique temporary file name
+  const tmpScriptPath = `/tmp/temp-script-${Date.now()}.sh`
+  fs.writeFileSync(tmpScriptPath, script, {
+    mode: 0o644
   })
+
+  core.info(`Executing script: ${script}\n`)
+
+  // Execute the script using bash
+  return _exec(['/bin/bash', '-e', tmpScriptPath], options)
 }
 
 /**
@@ -201,8 +241,8 @@ async function _ensureContainerRunning(
     core.debug(`Container ${fullImageName} is not running. Starting it...`)
     const options = [
       '--detach',
-      `--name="${container_name}"`,
-      '--publish="8080:80"',
+      `--name=${container_name}`,
+      '--publish=8080:80',
       `--env="CLEAN_ON_START=yes"`,
       `--network=${network}`,
       ...container_options
@@ -311,7 +351,7 @@ function _installScript(script_fullpath: string, script_content: string): void {
  * The helper functions that a run function needs.
  * For testing purpose, these functions can be mocked.
  */
-export type runEnvironment = {
+export interface runEnvironment {
   ensureContainerRunning?: (
     registry: string,
     image_name: string,
@@ -325,6 +365,15 @@ export type runEnvironment = {
   ) => Promise<{stdout: string; stderr: string}>
   installScript?: (script_fullpath: string, script_content: string) => void
   waitForHttpServer?: (url: string, timeout: number) => Promise<void>
+  _exec?: (
+    cmd: string[],
+    options?: {
+      logStdout: boolean
+      logStderr: boolean
+      showCommand?: boolean
+      useTty?: boolean
+    }
+  ) => Promise<{stdout: string; stderr: string}>
 }
 
 /**
@@ -338,6 +387,8 @@ export async function run({
   waitForHttpServer = _waitForHttpServer
 }: runEnvironment = {}): Promise<void> {
   const startTime = new Date().getTime()
+  let commandOutput = {stdout: '', stderr: ''}
+
   try {
     const configs = getConfigs()
 
@@ -351,7 +402,7 @@ export async function run({
       container_options.push(
         ...configs.plugins.map(
           plugin =>
-            `--volume="${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}"`
+            `--volume=${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}`
         )
       )
     }
@@ -359,7 +410,7 @@ export async function run({
       container_options.push(
         ...configs.themes.map(
           theme =>
-            `--volume="${theme}:/var/www/html/wp-content/themes/${basename(theme)}"`
+            `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`
         )
       )
     }
@@ -367,7 +418,6 @@ export async function run({
     core.startGroup('Start Wordpress CI container')
     const container_url = `http://localhost:8080`
     process.env['WORDPRESS_CI_URL'] = container_url
-    core.info(`Waiting for Wordpress CI to be available at ${container_url}...`)
     try {
       await ensureContainerRunning(
         configs.registry,
@@ -376,13 +426,22 @@ export async function run({
         configs.network,
         container_options
       )
+    } catch (error) {
+      core.setFailed(`Error starting container: ${(error as Error).message}`)
+      throw error
+    } finally {
+      core.endGroup()
+    }
+
+    try {
+      core.startGroup('Start Wordpress CI container')
+      core.info(
+        `Waiting for Wordpress CI to be available at ${container_url}...`
+      )
       await waitForHttpServer(container_url, 10000) // Wait up to 10 seconds
     } catch (error) {
-      core.error(
-        `Error ensuring container is running: ${(error as Error).message}`
-      )
       core.setFailed(
-        `Error ensuring container is running: ${(error as Error).message}`
+        `Error waiting for Wordpress CI to be available: ${(error as Error).message}`
       )
       throw error
     } finally {
@@ -413,7 +472,10 @@ export async function run({
         core.endGroup()
 
         core.startGroup('Test Command Result')
-        await _exec([configs.testCommand])
+        commandOutput = (await _shellExec(configs.testCommand)) as {
+          stdout: string
+          stderr: string
+        }
       } else {
         core.info('No test command provided, skipping test execution.')
       }
@@ -428,8 +490,8 @@ export async function run({
       core.endGroup()
     }
 
-    core.setOutput('stdout', '')
-    core.setOutput('stderr', '')
+    core.setOutput('stdout', commandOutput.stdout)
+    core.setOutput('stderr', commandOutput.stderr)
     core.setOutput('time', new Date().getTime() - startTime)
   } catch (error) {
     // Fail the workflow run if an error occurs
