@@ -58,6 +58,9 @@ jobs:
             # Running "server-side" commands in the Wordpress CI container
             echo "Current directory: $(wpci-cmd pwd)"
             wpci-cmd ls -la
+            wpci-cmd ls -la plugins
+            wpci-cmd ls -la plugins/myplugin
+            wpci-cmd wp plugin list
             wpci-cmd wp plugin activate myplugin
 
             # Running "client-side" commands in GitHub Actions runner

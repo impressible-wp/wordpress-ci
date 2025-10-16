@@ -25982,6 +25982,8 @@ async function _exec(cmd, options = {
             }
         }
     };
+    stdout = '';
+    stderr = '';
     const exitCode = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec(command, args, execOptions);
     if (exitCode === 0) {
         return { stdout, stderr };
@@ -26005,7 +26007,12 @@ async function _shellExec(script, options = {
     });
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Executing script: ${script}\n`);
     // Execute the script using bash
-    return _exec(['/bin/bash', '-e', tmpScriptPath], options);
+    // - "-e": exit immediately if a command exits with a non-zero status
+    // - "-u": treat unset variables as an error when substituting
+    // - "-o pipefail": the return value of a pipeline is the status of
+    //   the last command to exit with a non-zero status,
+    //   or zero if no command exited with a non-zero status
+    return _exec(['/bin/bash', '-eu', '-o', 'pipefail', tmpScriptPath], options);
 }
 /**
  * Make sure the container mentioned is running in the background.
