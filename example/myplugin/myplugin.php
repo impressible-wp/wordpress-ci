@@ -1,13 +1,15 @@
 <?php
 
-/*
- * Name: My Plugin
- * Description: An example WordPress plugin.
- * Version: 1.0.0
- * Author: Koala Yeung <koalay@gmail.com>
- * Author URI: https://github.com/yookoala
- * License: MIT
- * License URI: https://opensource.org/licenses/MIT
+/**
+ * Plugin Name:       My Plugin
+ * Plugin URI:        https://github.com/impressible-wp/wordpress-ci
+ * Description:       An example WordPress plugin.
+ * Version:           1.0.0
+ * Requires PHP:      8.0
+ * Author:            Koala Yeung
+ * Author URI:        https://github.com/yookoala/
+ * License:           MIT License
+ * License URI:       https://opensource.org/licenses/MIT
  */
 
 // Make sure we don't expose any info if called directly
