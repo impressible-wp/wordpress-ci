@@ -39,6 +39,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Setup Chrome for webdriver-based testing
+        uses: browser-actions/setup-chrome@v2
+
+      - name: Setup Chrome Driver for webdriver-based testing
+        uses: nanasess/setup-chromedriver@v2
+
       - name: Test My Plugin
         uses: ./
         with:
