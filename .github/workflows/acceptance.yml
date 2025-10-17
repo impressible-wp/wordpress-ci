@@ -45,6 +45,9 @@ jobs:
       - name: Setup Chrome Driver for webdriver-based testing
         uses: nanasess/setup-chromedriver@v2
 
+      - name: Start Chrome Driver process in background
+        run: chromedriver --port=4444 >chromedriver.log 2>&1 &
+
       - name: Test My Plugin
         uses: ./
         with:
