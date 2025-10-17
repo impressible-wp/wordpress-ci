@@ -1,5 +1,5 @@
 {
-    "name": "impressible/wordpress-ci-example-combined-test",
+    "name": "impressible/wordpress-ci-example-combined",
     "description": "An example project to show case wordpress-ci with.",
     "type": "project",
     "license": "MIT",
@@ -10,9 +10,12 @@
         }
     ],
     "scripts": {
-        "test": "echo combined test"
+        "test:acceptance": "codecept run Acceptance",
+        "test": "codecept run"
     },
     "require-dev": {
-        "codeception/codeception": "^5.3"
+        "codeception/codeception": "^5.3",
+        "codeception/module-webdriver": "^4.0",
+        "codeception/module-asserts": "*"
     }
 }
