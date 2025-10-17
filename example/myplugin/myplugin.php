@@ -25,13 +25,13 @@ if ( !function_exists( 'add_filter' ) || !function_exists( 'is_front_page' ) ) {
  * @return string The modified content with the message prepended.
  */
 function my_custom_frontpage_message( $content ) {
-  $custom_message = '<div style="padding: 15px; margin-bottom: 20px; background-color: #e7f3fe; border-left: 6px solid #2196F3;">';
-  $custom_message .= '<h3>A Message from My Plugin</h3>';
-  $custom_message .= '<p>My Plugin is active!</p>';
-  $custom_message .= '</div>';
+    $custom_message = '<div style="padding: 15px; margin-bottom: 20px; background-color: #e7f3fe; border-left: 6px solid #2196F3;">';
+    $custom_message .= '<h3>A Message from My Plugin</h3>';
+    $custom_message .= '<p>My Plugin is active!</p>';
+    $custom_message .= '</div>';
 
-  // 3. Prepend your message to the original content.
-  return $custom_message . $content;
+    // 3. Prepend your message to the original content.
+    return $custom_message . $content;
 }
 
 // 5. Hook the function into WordPress.
