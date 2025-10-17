@@ -50,6 +50,21 @@ jobs:
 
       - name: Feasibility check
         run: |
+          # ping mysql service until it responds (max 30s)
+          for i in {1..30}; do
+            if nc -zv mysql 3306; then
+              echo "MySQL / MariaDB is up!"
+              break
+            else
+              echo "Waiting for MySQL / MariaDB to start..."
+              sleep 1
+            fi
+          done
+
+          # Show all running containers
+          docker ps
+
+          # Check if MySQL / MariaDB container is running
           docker ps --filter "name=mysql" --format "{{.ID}}"
           ID=$(docker ps --filter "name=mysql" --format "{{.ID}}")
           if [ -z "$ID" ]; then
