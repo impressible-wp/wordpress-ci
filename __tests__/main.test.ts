@@ -16,12 +16,14 @@ function mockRunEnvironment(): runEnvironment {
   const ensureContainerStopped = jest.fn()
   const installScript = jest.fn()
   const waitForHttpServer = jest.fn()
+  const _exec = jest.fn().mockResolvedValue({stdout: 'test output', stderr: ''})
 
   return {
     ensureContainerRunning,
     ensureContainerStopped,
     installScript,
-    waitForHttpServer
+    waitForHttpServer,
+    _exec
   }
 }
 
@@ -46,6 +48,14 @@ describe('action', () => {
           return './plugin1\n./plugin2'
         case 'themes':
           return './theme1\n./theme2'
+        case 'db-host':
+          return 'some-db-host'
+        case 'db-name':
+          return 'some-db-name'
+        case 'db-user':
+          return 'some-db-user'
+        case 'db-password':
+          return 'some-db-password'
         case 'test-command':
           return 'test command'
         case 'test-command-context':
@@ -65,6 +75,12 @@ describe('action', () => {
     )
     expect(mockCore.debug).toHaveBeenCalledWith('image-tag: some-image-tag')
     expect(mockCore.debug).toHaveBeenCalledWith('network: some-network')
+
+    expect(mockCore.debug).toHaveBeenCalledWith('db-host: some-db-host')
+    expect(mockCore.debug).toHaveBeenCalledWith('db-name: some-db-name')
+    expect(mockCore.debug).toHaveBeenCalledWith('db-user: some-db-user')
+    expect(mockCore.debug).toHaveBeenCalledWith('db-password: [REDACTED]')
+
     expect(mockCore.debug).toHaveBeenCalledWith(
       `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`
     )
@@ -83,10 +99,14 @@ describe('action', () => {
       'some-image-tag',
       'some-network',
       [
-        '--volume="./plugin1:/var/www/html/wp-content/plugins/plugin1"',
-        '--volume="./plugin2:/var/www/html/wp-content/plugins/plugin2"',
-        '--volume="./theme1:/var/www/html/wp-content/themes/theme1"',
-        '--volume="./theme2:/var/www/html/wp-content/themes/theme2"'
+        '--env="WORDPRESS_DB_HOST=some-db-host"',
+        '--env="WORDPRESS_DB_NAME=some-db-name"',
+        '--env="WORDPRESS_DB_USER=some-db-user"',
+        '--env="WORDPRESS_DB_PASSWORD=some-db-password"',
+        '--volume=./plugin1:/var/www/html/wp-content/plugins/plugin1',
+        '--volume=./plugin2:/var/www/html/wp-content/plugins/plugin2',
+        '--volume=./theme1:/var/www/html/wp-content/themes/theme1',
+        '--volume=./theme2:/var/www/html/wp-content/themes/theme2'
       ]
     )
 

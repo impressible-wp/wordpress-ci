@@ -3180,6 +3180,273 @@ function copyFile(srcFile, destFile, force) {
 
 /***/ }),
 
+/***/ 4801:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+
+
+const isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
+
+/* eslint-disable no-control-regex */
+// this is a modified version of https://github.com/chalk/ansi-regex (MIT License)
+const ANSI_REGEX = /[\u001b\u009b][[\]#;?()]*(?:(?:(?:[^\W_]*;?[^\W_]*)\u0007)|(?:(?:[0-9]{1,4}(;[0-9]{0,4})*)?[~0-9=<>cf-nqrtyA-PRZ]))/g;
+
+const hasColor = () => {
+  if (typeof process !== 'undefined') {
+    return process.env.FORCE_COLOR !== '0';
+  }
+  return false;
+};
+
+const create = () => {
+  const colors = {
+    enabled: hasColor(),
+    visible: true,
+    styles: {},
+    keys: {}
+  };
+
+  const ansi = style => {
+    let open = style.open = `\u001b[${style.codes[0]}m`;
+    let close = style.close = `\u001b[${style.codes[1]}m`;
+    let regex = style.regex = new RegExp(`\\u001b\\[${style.codes[1]}m`, 'g');
+    style.wrap = (input, newline) => {
+      if (input.includes(close)) input = input.replace(regex, close + open);
+      let output = open + input + close;
+      // see https://github.com/chalk/chalk/pull/92, thanks to the
+      // chalk contributors for this fix. However, we've confirmed that
+      // this issue is also present in Windows terminals
+      return newline ? output.replace(/\r*\n/g, `${close}$&${open}`) : output;
+    };
+    return style;
+  };
+
+  const wrap = (style, input, newline) => {
+    return typeof style === 'function' ? style(input) : style.wrap(input, newline);
+  };
+
+  const style = (input, stack) => {
+    if (input === '' || input == null) return '';
+    if (colors.enabled === false) return input;
+    if (colors.visible === false) return '';
+    let str = '' + input;
+    let nl = str.includes('\n');
+    let n = stack.length;
+    if (n > 0 && stack.includes('unstyle')) {
+      stack = [...new Set(['unstyle', ...stack])].reverse();
+    }
+    while (n-- > 0) str = wrap(colors.styles[stack[n]], str, nl);
+    return str;
+  };
+
+  const define = (name, codes, type) => {
+    colors.styles[name] = ansi({ name, codes });
+    let keys = colors.keys[type] || (colors.keys[type] = []);
+    keys.push(name);
+
+    Reflect.defineProperty(colors, name, {
+      configurable: true,
+      enumerable: true,
+      set(value) {
+        colors.alias(name, value);
+      },
+      get() {
+        let color = input => style(input, color.stack);
+        Reflect.setPrototypeOf(color, colors);
+        color.stack = this.stack ? this.stack.concat(name) : [name];
+        return color;
+      }
+    });
+  };
+
+  define('reset', [0, 0], 'modifier');
+  define('bold', [1, 22], 'modifier');
+  define('dim', [2, 22], 'modifier');
+  define('italic', [3, 23], 'modifier');
+  define('underline', [4, 24], 'modifier');
+  define('inverse', [7, 27], 'modifier');
+  define('hidden', [8, 28], 'modifier');
+  define('strikethrough', [9, 29], 'modifier');
+
+  define('black', [30, 39], 'color');
+  define('red', [31, 39], 'color');
+  define('green', [32, 39], 'color');
+  define('yellow', [33, 39], 'color');
+  define('blue', [34, 39], 'color');
+  define('magenta', [35, 39], 'color');
+  define('cyan', [36, 39], 'color');
+  define('white', [37, 39], 'color');
+  define('gray', [90, 39], 'color');
+  define('grey', [90, 39], 'color');
+
+  define('bgBlack', [40, 49], 'bg');
+  define('bgRed', [41, 49], 'bg');
+  define('bgGreen', [42, 49], 'bg');
+  define('bgYellow', [43, 49], 'bg');
+  define('bgBlue', [44, 49], 'bg');
+  define('bgMagenta', [45, 49], 'bg');
+  define('bgCyan', [46, 49], 'bg');
+  define('bgWhite', [47, 49], 'bg');
+
+  define('blackBright', [90, 39], 'bright');
+  define('redBright', [91, 39], 'bright');
+  define('greenBright', [92, 39], 'bright');
+  define('yellowBright', [93, 39], 'bright');
+  define('blueBright', [94, 39], 'bright');
+  define('magentaBright', [95, 39], 'bright');
+  define('cyanBright', [96, 39], 'bright');
+  define('whiteBright', [97, 39], 'bright');
+
+  define('bgBlackBright', [100, 49], 'bgBright');
+  define('bgRedBright', [101, 49], 'bgBright');
+  define('bgGreenBright', [102, 49], 'bgBright');
+  define('bgYellowBright', [103, 49], 'bgBright');
+  define('bgBlueBright', [104, 49], 'bgBright');
+  define('bgMagentaBright', [105, 49], 'bgBright');
+  define('bgCyanBright', [106, 49], 'bgBright');
+  define('bgWhiteBright', [107, 49], 'bgBright');
+
+  colors.ansiRegex = ANSI_REGEX;
+  colors.hasColor = colors.hasAnsi = str => {
+    colors.ansiRegex.lastIndex = 0;
+    return typeof str === 'string' && str !== '' && colors.ansiRegex.test(str);
+  };
+
+  colors.alias = (name, color) => {
+    let fn = typeof color === 'string' ? colors[color] : color;
+
+    if (typeof fn !== 'function') {
+      throw new TypeError('Expected alias to be the name of an existing color (string) or a function');
+    }
+
+    if (!fn.stack) {
+      Reflect.defineProperty(fn, 'name', { value: name });
+      colors.styles[name] = fn;
+      fn.stack = [name];
+    }
+
+    Reflect.defineProperty(colors, name, {
+      configurable: true,
+      enumerable: true,
+      set(value) {
+        colors.alias(name, value);
+      },
+      get() {
+        let color = input => style(input, color.stack);
+        Reflect.setPrototypeOf(color, colors);
+        color.stack = this.stack ? this.stack.concat(fn.stack) : fn.stack;
+        return color;
+      }
+    });
+  };
+
+  colors.theme = custom => {
+    if (!isObject(custom)) throw new TypeError('Expected theme to be an object');
+    for (let name of Object.keys(custom)) {
+      colors.alias(name, custom[name]);
+    }
+    return colors;
+  };
+
+  colors.alias('unstyle', str => {
+    if (typeof str === 'string' && str !== '') {
+      colors.ansiRegex.lastIndex = 0;
+      return str.replace(colors.ansiRegex, '');
+    }
+    return '';
+  });
+
+  colors.alias('noop', str => str);
+  colors.none = colors.clear = colors.noop;
+
+  colors.stripColor = colors.unstyle;
+  colors.symbols = __nccwpck_require__(4763);
+  colors.define = define;
+  return colors;
+};
+
+module.exports = create();
+module.exports.create = create;
+
+
+/***/ }),
+
+/***/ 4763:
+/***/ ((module) => {
+
+
+
+const isHyper = typeof process !== 'undefined' && process.env.TERM_PROGRAM === 'Hyper';
+const isWindows = typeof process !== 'undefined' && process.platform === 'win32';
+const isLinux = typeof process !== 'undefined' && process.platform === 'linux';
+
+const common = {
+  ballotDisabled: '☒',
+  ballotOff: '☐',
+  ballotOn: '☑',
+  bullet: '•',
+  bulletWhite: '◦',
+  fullBlock: '█',
+  heart: '❤',
+  identicalTo: '≡',
+  line: '─',
+  mark: '※',
+  middot: '·',
+  minus: '－',
+  multiplication: '×',
+  obelus: '÷',
+  pencilDownRight: '✎',
+  pencilRight: '✏',
+  pencilUpRight: '✐',
+  percent: '%',
+  pilcrow2: '❡',
+  pilcrow: '¶',
+  plusMinus: '±',
+  question: '?',
+  section: '§',
+  starsOff: '☆',
+  starsOn: '★',
+  upDownArrow: '↕'
+};
+
+const windows = Object.assign({}, common, {
+  check: '√',
+  cross: '×',
+  ellipsisLarge: '...',
+  ellipsis: '...',
+  info: 'i',
+  questionSmall: '?',
+  pointer: '>',
+  pointerSmall: '»',
+  radioOff: '( )',
+  radioOn: '(*)',
+  warning: '‼'
+});
+
+const other = Object.assign({}, common, {
+  ballotCross: '✘',
+  check: '✔',
+  cross: '✖',
+  ellipsisLarge: '⋯',
+  ellipsis: '…',
+  info: 'ℹ',
+  questionFull: '？',
+  questionSmall: '﹖',
+  pointer: isLinux ? '▸' : '❯',
+  pointerSmall: isLinux ? '‣' : '›',
+  radioOff: '◯',
+  radioOn: '◉',
+  warning: '⚠'
+});
+
+module.exports = (isWindows && !isHyper) ? windows : other;
+Reflect.defineProperty(module.exports, 'common', { enumerable: false, value: common });
+Reflect.defineProperty(module.exports, 'windows', { enumerable: false, value: windows });
+Reflect.defineProperty(module.exports, 'other', { enumerable: false, value: other });
+
+
+/***/ }),
+
 /***/ 770:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -25576,12 +25843,15 @@ __webpack_async_result__();
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(7484);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5317);
-/* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(child_process__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5236);
+/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_exec__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(6928);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(9896);
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(fs__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(4801);
+/* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__nccwpck_require__.n(ansi_colors__WEBPACK_IMPORTED_MODULE_4__);
+
 
 // import * as github from '@actions/github'
 
@@ -25598,16 +25868,23 @@ __webpack_async_result__();
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
+ * @property {string} db_host - The database host.
+ * @property {string} db_name - The database name.
+ * @property {string} db_user - The database user.
+ * @property {string} db_password - The database password.
  * @property {string} testCommand - The test command to run.
  * @property {string} testCommandContext - The build context path.
  */
 function getConfigs() {
+    // Input(s) for getting the Wordpress CI container image
     const registry = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('registry').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`registry: ${registry}`);
     const image_name = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('image-name').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`image-name: ${image_name}`);
     const image_tag = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('image-tag').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`image-tag: ${image_tag}`);
+    // Input(s) for configuring the Wordpress CI container
+    // before starting it
     const network = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('network').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`network: ${network}`);
     if (network === '') {
@@ -25625,6 +25902,21 @@ function getConfigs() {
         .map(t => t.trim())
         .filter(t => t);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`themes: ${JSON.stringify(themes)}`);
+    // Input(s) for the installation of Wordpress in the container
+    const db_host = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-host').trim();
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-host: ${db_host}`);
+    const db_name = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-name').trim();
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-name: ${db_name}`);
+    const db_user = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-user').trim();
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-user: ${db_user}`);
+    const db_password = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-password').trim();
+    if (db_password === '') {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-password: [EMPTY]`);
+    }
+    else {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-password: [REDACTED]`);
+    }
+    // Input(s) for running tests
     const testCommand = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command').trim();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`test-command: ${testCommand}`);
     let testCommandContext = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command-context').trim();
@@ -25638,6 +25930,10 @@ function getConfigs() {
         image_tag,
         network,
         plugins,
+        db_host,
+        db_name,
+        db_user,
+        db_password,
         themes,
         testCommand,
         testCommandContext
@@ -25645,43 +25941,79 @@ function getConfigs() {
 }
 /**
  * A simple function to execute command and pipe outputs
- * to core.
+ * to core using @actions/exec for GitHub Actions compatibility.
  *
  * @param {string[]} cmd - The command to execute.
  * @returns {Promise<{stdout: string, stderr: string}>}
  */
 async function _exec(cmd, options = {
-    logStdout: true,
-    logStderr: true
+    logStdout: false,
+    logStderr: true,
+    showCommand: false,
+    useTty: true
 }) {
-    return new Promise((resolve, reject) => {
-        const subprocess = (0,child_process__WEBPACK_IMPORTED_MODULE_1__.exec)(cmd.join(' '));
-        let stdout = '';
-        let stderr = '';
-        subprocess?.stdout?.on('data', (data) => {
-            stdout += data;
-            if (options.logStdout) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
+    // Show the command being executed
+    const cmdStr = cmd.join(' ');
+    if (options.showCommand) {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`> ${ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(cmdStr)}`);
+    }
+    const [command, ...args] = cmd;
+    if (!command) {
+        throw new Error('No command provided');
+    }
+    let stdout = '';
+    let stderr = '';
+    const execOptions = {
+        silent: true, // If logStdout is false, run silently
+        listeners: {
+            stdout: (data) => {
+                const output = data.toString();
+                stdout += output;
+                if (options.logStdout) {
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(output.trim());
+                }
+            },
+            stderr: (data) => {
+                const output = data.toString();
+                stderr += output;
+                if (options.logStderr) {
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(output.trim()));
+                }
             }
-        });
-        subprocess?.stderr?.on('data', (data) => {
-            stderr += data;
-            if (options.logStderr) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(data.trim());
-            }
-        });
-        subprocess.on('exit', code => {
-            if (code === 0) {
-                resolve({
-                    stdout,
-                    stderr
-                });
-            }
-            else {
-                reject(new Error(`Command failed: ${cmd.join(' ')}\nExit code: ${code}\nError: ${stderr}`));
-            }
-        });
+        }
+    };
+    stdout = '';
+    stderr = '';
+    const exitCode = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec(command, args, execOptions);
+    if (exitCode === 0) {
+        return { stdout, stderr };
+    }
+    else {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().red(stderr));
+        throw new Error(`command failed: ${cmdStr}\nexit code: ${exitCode}`);
+    }
+}
+async function _shellExec(script, options = {
+    logStdout: true,
+    logStderr: true,
+    showCommand: false,
+    useTty: true
+}) {
+    // Write the script to a temporary file
+    // Generate a unique temporary file name
+    const tmpScriptPath = `/tmp/temp-script-${Date.now()}.sh`;
+    fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(tmpScriptPath, script, {
+        mode: 0o644
     });
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Executing script: ${script}\n`);
+    // Execute the script using bash
+    // - "-e": exit immediately if a command exits with a non-zero status
+    // - "-u": treat unset variables as an error when substituting
+    // - "-x": print each command before executing it
+    // - "-o pipefail": the return value of a pipeline is the status of
+    //   the last command to exit with a non-zero status,
+    //   or zero if no command exited with a non-zero status
+    return _exec(['/bin/bash', '-exu', '-o', 'pipefail', tmpScriptPath], options);
 }
 /**
  * Make sure the container mentioned is running in the background.
@@ -25693,11 +26025,6 @@ async function _exec(cmd, options = {
 async function _ensureContainerRunning(registry, image_name, image_tag, network, container_options = [], container_name = 'wordpress-ci') {
     const fullImageName = `${registry}/${image_name}:${image_tag}`;
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Ensuring container ${fullImageName} is running...`);
-    // Get variables from environment
-    const wordpressDbHost = process.env['WORDPRESS_DB_HOST'] || 'mysql';
-    const wordpressDbName = process.env['WORDPRESS_DB_NAME'] || 'wordpress';
-    const wordpressDbUser = process.env['WORDPRESS_DB_USER'] || 'wordpress';
-    const wordpressDbPassword = process.env['WORDPRESS_DB_PASSWORD'] || 'wordpress';
     // Using docker command, check if the container is running.
     // If not, start the container in detached mode.
     // This is a placeholder implementation.
@@ -25715,19 +26042,13 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Container ${fullImageName} is not running. Starting it...`);
         const options = [
             '--detach',
-            `--name="${container_name}"`,
-            '--publish="8080:80"',
+            `--name=${container_name}`,
+            '--publish=8080:80',
             `--env="CLEAN_ON_START=yes"`,
-            `--env="WORDPRESS_DB_HOST=${wordpressDbHost}"`,
-            `--env="WORDPRESS_DB_NAME=${wordpressDbName}"`,
-            `--env="WORDPRESS_DB_USER=${wordpressDbUser}"`,
-            `--env="WORDPRESS_DB_PASSWORD=${wordpressDbPassword}"`,
             `--network=${network}`,
             ...container_options
         ];
         const cmd = ['docker', 'run', ...options, fullImageName];
-        // eslint-disable-next-line no-console
-        console.log(`Starting container by command: ${cmd.join(' ')}`);
         return _exec(cmd);
     }
     else {
@@ -25761,7 +26082,8 @@ async function _waitForHttpServer(url, timeout) {
         try {
             const result = await _exec([`curl -s -o /dev/null -w "%{http_code}" ${url}`], {
                 logStdout: false,
-                logStderr: false
+                logStderr: false,
+                showCommand: false
             });
             if (result.stdout.trim() !== '000') {
                 return;
@@ -25787,7 +26109,7 @@ async function _waitForHttpServer(url, timeout) {
 function _proxiedContainerCommandScript(container_name, container_command_name = '') {
     return `#!/bin/bash
 
-  docker exec -it ${container_name} ${container_command_name} "$@"
+  docker exec -i ${container_name} ${container_command_name} "$@"
 
   exit $?
   `;
@@ -25801,10 +26123,10 @@ function _proxiedContainerCommandScript(container_name, container_command_name =
  */
 function _installScript(script_fullpath, script_content) {
     if (fs__WEBPACK_IMPORTED_MODULE_3___default().existsSync(script_fullpath)) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Script ${script_fullpath} already exists, skipping installation.`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(`Script ${script_fullpath} already exists, skipping installation.`));
         return;
     }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Installing script to ${script_fullpath}...`);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(`Installing script to ${script_fullpath}...`));
     // Write the script content to the file and make it executable
     fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(script_fullpath, script_content, { mode: 0o755 });
 }
@@ -25814,23 +26136,41 @@ function _installScript(script_fullpath, script_content) {
  */
 async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer } = {}) {
     const startTime = new Date().getTime();
+    let commandOutput = { stdout: '', stderr: '' };
     try {
         const configs = getConfigs();
-        const container_options = [];
+        const container_options = [
+            `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
+            `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
+            `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
+            `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
+        ];
         if (configs.plugins.length > 0) {
-            container_options.push(...configs.plugins.map(plugin => `--volume="${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}"`));
+            container_options.push(...configs.plugins.map(plugin => `--volume=${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}`));
         }
         if (configs.themes.length > 0) {
-            container_options.push(...configs.themes.map(theme => `--volume="${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}"`));
+            container_options.push(...configs.themes.map(theme => `--volume=${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}`));
         }
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Start Wordpress CI container');
+        const container_url = `http://localhost:8080`;
+        process.env['WORDPRESS_CI_URL'] = container_url;
         try {
             await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network, container_options);
-            await waitForHttpServer('http://localhost:8080', 10000); // Wait up to 10 seconds
         }
         catch (error) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(`Error ensuring container is running: ${error.message}`);
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error ensuring container is running: ${error.message}`);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error starting container: ${error.message}`);
+            throw error;
+        }
+        finally {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+        }
+        try {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Verify Wordpress CI is up and running');
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
+            await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
+        }
+        catch (error) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
             throw error;
         }
         finally {
@@ -25844,15 +26184,16 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         // Download the frontpage on localhost:8080
         try {
             // change to the test command context directory
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Change to Test Command Context Directory');
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
             process.chdir(configs.testCommandContext);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
             // run the test command
             if (configs.testCommand) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Command');
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(configs.testCommand);
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Run Test Command');
-                await _exec([configs.testCommand]);
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(configs.testCommand));
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+                commandOutput = (await _shellExec(configs.testCommand));
             }
             else {
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('No test command provided, skipping test execution.');
@@ -25863,13 +26204,12 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             throw error;
         }
         finally {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Stop the Wordpress CI container');
             await ensureContainerStopped('wordpress-ci');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
         }
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', '');
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stderr', '');
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', commandOutput.stdout);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stderr', commandOutput.stderr);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('time', new Date().getTime() - startTime);
     }
     catch (error) {
