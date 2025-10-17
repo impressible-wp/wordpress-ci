@@ -48,6 +48,20 @@ jobs:
       - name: Start Chrome Driver process in background
         run: chromedriver --port=4444 >chromedriver.log 2>&1 &
 
+      - name: Feasibility check
+        run: |
+          docker ps --filter "name=mysql" --format "{{.ID}}"
+          ID=$(docker ps --filter "name=mysql" --format "{{.ID}}")
+          if [ -z "$ID" ]; then
+            echo "MySQL / MariaDB container is not running (yet?)"
+          fi
+
+          docker inspect $ID --format '{{json .NetworkSettings.Networks}}'
+          MYSQL_NETWORK=$(docker inspect $ID --format '{{json .NetworkSettings.Networks}}' | \
+            php -r 'echo json_encode(array_key_first(json_decode(file_get_contents("php://stdin"), associative: true, flags: JSON_THROW_ON_ERROR)));')
+
+          echo "MySQL / MariaDB container is running in network: $MYSQL_NETWORK"
+
       - name: Test My Plugin
         uses: ./
         with:
