@@ -199,10 +199,11 @@ async function _shellExec(
   // Execute the script using bash
   // - "-e": exit immediately if a command exits with a non-zero status
   // - "-u": treat unset variables as an error when substituting
+  // - "-x": print each command before executing it
   // - "-o pipefail": the return value of a pipeline is the status of
   //   the last command to exit with a non-zero status,
   //   or zero if no command exited with a non-zero status
-  return _exec(['/bin/bash', '-eu', '-o', 'pipefail', tmpScriptPath], options)
+  return _exec(['/bin/bash', '-exu', '-o', 'pipefail', tmpScriptPath], options)
 }
 
 /**
@@ -462,16 +463,17 @@ export async function run({
     // Download the frontpage on localhost:8080
     try {
       // change to the test command context directory
+      core.startGroup('Change to Test Command Context Directory')
       core.info(`Changed directory to ${configs.testCommandContext}`)
       process.chdir(configs.testCommandContext)
+      core.endGroup()
 
       // run the test command
       if (configs.testCommand) {
-        core.startGroup('Test Command')
-        core.info(configs.testCommand)
+        core.startGroup('Run Test Command')
+        core.info(c.blue(configs.testCommand))
         core.endGroup()
 
-        core.startGroup('Test Command Result')
         commandOutput = (await _shellExec(configs.testCommand)) as {
           stdout: string
           stderr: string
@@ -483,8 +485,6 @@ export async function run({
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
     } finally {
-      core.endGroup()
-
       core.startGroup('Stop the Wordpress CI container')
       await ensureContainerStopped('wordpress-ci')
       core.endGroup()

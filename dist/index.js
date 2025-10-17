@@ -26009,10 +26009,11 @@ async function _shellExec(script, options = {
     // Execute the script using bash
     // - "-e": exit immediately if a command exits with a non-zero status
     // - "-u": treat unset variables as an error when substituting
+    // - "-x": print each command before executing it
     // - "-o pipefail": the return value of a pipeline is the status of
     //   the last command to exit with a non-zero status,
     //   or zero if no command exited with a non-zero status
-    return _exec(['/bin/bash', '-eu', '-o', 'pipefail', tmpScriptPath], options);
+    return _exec(['/bin/bash', '-exu', '-o', 'pipefail', tmpScriptPath], options);
 }
 /**
  * Make sure the container mentioned is running in the background.
@@ -26183,14 +26184,15 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         // Download the frontpage on localhost:8080
         try {
             // change to the test command context directory
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Change to Test Command Context Directory');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
             process.chdir(configs.testCommandContext);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
             // run the test command
             if (configs.testCommand) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Test Command');
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(configs.testCommand);
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Run Test Command');
+                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(configs.testCommand));
                 _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Test Command Result');
                 commandOutput = (await _shellExec(configs.testCommand));
             }
             else {
@@ -26202,7 +26204,6 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             throw error;
         }
         finally {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Stop the Wordpress CI container');
             await ensureContainerStopped('wordpress-ci');
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
