@@ -10,9 +10,12 @@
         }
     ],
     "scripts": {
-        "test": "echo plugin test"
+        "test:acceptance": "codecept run Acceptance",
+        "test": "codecept run"
     },
     "require-dev": {
-        "codeception/codeception": "^5.3"
+        "codeception/codeception": "^5.3",
+        "codeception/module-webdriver": "^4.0",
+        "codeception/module-asserts": "*"
     }
 }

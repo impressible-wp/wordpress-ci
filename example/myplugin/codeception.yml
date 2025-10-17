@@ -1,0 +1,25 @@
+namespace: Tests
+support_namespace: Support
+paths:
+  tests: tests
+  output: tests/_output
+  data: tests/Support/Data
+  support: tests/Support
+  envs: tests/_envs
+params:
+  - env
+actor_suffix: Tester
+extensions:
+  enabled:
+    - Codeception\Extension\RunFailed
+modules:
+  enabled:
+    - WebDriver:
+  config:
+    WebDriver:
+      url: http://localhost:8080/
+      browser: chrome
+      path: /
+      capabilities:
+        goog:chromeOptions:
+          args: ['--headless', '--disable-gpu']
