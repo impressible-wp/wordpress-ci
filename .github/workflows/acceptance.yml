@@ -57,8 +57,7 @@ jobs:
 
           # Find container ID by hostname
           for container_id in $(docker ps -q); do
-            echo "Checking container ID: $container_id";
-            docker inspect -f '{{.Config.Hostname}}' $container_id
+            echo "Checking container ID: $container_id, Hostname: $(docker inspect -f '{{.Config.Hostname}}' $container_id)"
             if [ "$(docker inspect -f '{{.Config.Hostname}}' $container_id)" = "$HOSTNAME_TO_FIND" ]; then
               ID=$container_id
               break
