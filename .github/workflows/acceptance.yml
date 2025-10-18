@@ -55,25 +55,13 @@ jobs:
 
           HOSTNAME_TO_FIND="mysql"
 
-          # Find container ID by hostname
-          for container_id in $(docker ps -q); do
-            echo "Checking container ID: $container_id, Hostname: $(docker inspect -f '{{.Config.Hostname}}' $container_id)"
-            if [ "$(docker inspect -f '{{.Config.Hostname}}' $container_id)" = "$HOSTNAME_TO_FIND" ]; then
-              ID=$container_id
-              break
-            fi
+          echo "Show all networks in the Docker host:"
+          docker network ls
+
+          echo "Check if there is a container with hostname ${HOSTNAME_TO_FIND}:"
+          for NETWORK_ID in $(docker network ls --format "{{.ID}}"); do
+            docker network inspect ${NETWORK_ID} | php -r 'echo json_encode(array_map(fn($c) => $c["name"], json_decode(file_get_contents("php://stdin"), true)[0]["containers"]), JSON_PRETTY_PRINT);'
           done
-
-          if [ "$ID" = "" ]; then
-            echo "Could not find MySQL / MariaDB container by hostname: $HOSTNAME_TO_FIND"
-            exit 1
-          fi
-
-          docker inspect "$ID" --format '{{json .NetworkSettings.Networks}}'
-          MYSQL_NETWORK=$(docker inspect $ID --format '{{json .NetworkSettings.Networks}}' | \
-            php -r 'echo json_encode(array_key_first(json_decode(file_get_contents("php://stdin"), associative: true, flags: JSON_THROW_ON_ERROR)));')
-
-          echo "MySQL / MariaDB container is running in network: $MYSQL_NETWORK"
 
       - name: Test My Plugin
         uses: ./
