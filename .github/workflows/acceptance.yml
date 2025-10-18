@@ -48,6 +48,24 @@ jobs:
       - name: Start Chrome Driver process in background
         run: chromedriver --port=4444 >chromedriver.log 2>&1 &
 
+      - name: Feasibility check
+        run: |
+          # Show all running containers
+          docker ps
+
+          HOSTNAME_TO_FIND="mysql"
+
+          echo "Show all networks in the Docker host:"
+          docker network ls
+
+          echo "Check if there is a container with hostname ${HOSTNAME_TO_FIND}:"
+          for NETWORK_ID in $(docker network ls --format "{{.ID}}"); do
+            echo
+            echo "Inspecting network ID: ${NETWORK_ID}"
+            docker network inspect ${NETWORK_ID} | php -r 'echo json_encode(json_decode(file_get_contents("php://stdin"), true), JSON_PRETTY_PRINT);'
+            echo
+          done
+
       - name: Test My Plugin
         uses: ./
         with:
