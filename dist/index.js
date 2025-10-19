@@ -25971,9 +25971,8 @@ function _installScript(script_fullpath, script_content) {
  * @param image_name
  * @param image_tag
  */
-async function _ensureContainerRunning(registry, image_name, image_tag, network, container_options = [], container_name = 'wordpress-ci') {
-    const fullImageName = `${registry}/${image_name}:${image_tag}`;
-    core.debug(`Ensuring container ${fullImageName} is running...`);
+async function _ensureContainerRunning(image, network, container_options = [], container_name = 'wordpress-ci') {
+    core.debug(`Ensuring container ${image} is running...`);
     // Using docker command, check if the container is running.
     // If not, start the container in detached mode.
     // This is a placeholder implementation.
@@ -25983,12 +25982,12 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
         'ps',
         '--quiet',
         '--filter',
-        `name="${fullImageName}"`
+        `name="${image}"`
     ]);
     core.debug(`docker ps result: ${stdout}`);
     // Run the container in the background
     if (!stdout || stdout.toString().trim() === '') {
-        core.debug(`Container ${fullImageName} is not running. Starting it...`);
+        core.debug(`Container ${image} is not running. Starting it...`);
         const options = [
             '--detach',
             `--name=${container_name}`,
@@ -25997,11 +25996,11 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
             `--network=${network}`,
             ...container_options
         ];
-        const cmd = ['docker', 'run', ...options, fullImageName];
+        const cmd = ['docker', 'run', ...options, image];
         return _exec(cmd);
     }
     else {
-        core.debug(`Container ${fullImageName} is already running.`);
+        core.debug(`Container ${image} is already running.`);
         return Promise.resolve({ stdout: '', stderr: '' });
     }
 }
@@ -26110,9 +26109,7 @@ async function _getContainerInfoByDNSName(matchString) {
  * to run the action with.
  *
  * @returns {Object} The configuration object.
- * @property {string} registry - The container registry.
- * @property {string} image_name - The name of the image.
- * @property {string} image_tag - The tag of the image.
+ * @property {string} image - The image to use.
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
@@ -26125,12 +26122,8 @@ async function _getContainerInfoByDNSName(matchString) {
  */
 function getConfigs() {
     // Input(s) for getting the Wordpress CI container image
-    const registry = core.getInput('registry').trim();
-    core.debug(`registry: ${registry}`);
-    const image_name = core.getInput('image-name').trim();
-    core.debug(`image-name: ${image_name}`);
-    const image_tag = core.getInput('image-tag').trim();
-    core.debug(`image-tag: ${image_tag}`);
+    const image = core.getInput('image').trim();
+    core.debug(`image: ${image}`);
     // Input(s) for configuring the Wordpress CI container
     // before starting it
     const network = core.getInput('network').trim();
@@ -26170,9 +26163,7 @@ function getConfigs() {
     }
     core.debug(`test-command-context: ${testCommandContext}`);
     return {
-        registry,
-        image_name,
-        image_tag,
+        image,
         network,
         plugins,
         db_host,
@@ -26226,7 +26217,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         const container_url = `http://localhost:8080`;
         process.env['WORDPRESS_CI_URL'] = container_url;
         try {
-            await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, networkName, container_options);
+            await ensureContainerRunning(configs.image, networkName, container_options);
         }
         catch (error) {
             core.setFailed(`Error starting container: ${error.message}`);

@@ -3,18 +3,10 @@ description: 'Wordpress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
   # Input(s) for getting the Wordpress CI container image
-  registry:
-    description: 'The container registry to pull the image from'
+  image:
+    description: 'The container image to use'
     required: false
-    default: 'ghcr.io'
-  image-name:
-    description: 'The name of the image to build'
-    required: false
-    default: 'impressible-wp/wordpress-ci'
-  image-tag:
-    description: 'The tag of the image to build'
-    required: false
-    default: 'latest'
+    default: 'ghcr.io/impressible-wp/wordpress-ci:latest'
 
   # Input(s) for configuring the Wordpress CI container
   # before starting it

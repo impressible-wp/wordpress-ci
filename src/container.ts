@@ -9,15 +9,12 @@ import {_exec} from './system'
  * @param image_tag
  */
 export async function _ensureContainerRunning(
-  registry: string,
-  image_name: string,
-  image_tag: string,
+  image: string,
   network: string,
   container_options: string[] = [],
   container_name = 'wordpress-ci'
 ): Promise<{stdout: string; stderr: string}> {
-  const fullImageName = `${registry}/${image_name}:${image_tag}`
-  core.debug(`Ensuring container ${fullImageName} is running...`)
+  core.debug(`Ensuring container ${image} is running...`)
 
   // Using docker command, check if the container is running.
   // If not, start the container in detached mode.
@@ -28,13 +25,13 @@ export async function _ensureContainerRunning(
     'ps',
     '--quiet',
     '--filter',
-    `name="${fullImageName}"`
+    `name="${image}"`
   ])
   core.debug(`docker ps result: ${stdout}`)
 
   // Run the container in the background
   if (!stdout || stdout.toString().trim() === '') {
-    core.debug(`Container ${fullImageName} is not running. Starting it...`)
+    core.debug(`Container ${image} is not running. Starting it...`)
     const options = [
       '--detach',
       `--name=${container_name}`,
@@ -43,10 +40,10 @@ export async function _ensureContainerRunning(
       `--network=${network}`,
       ...container_options
     ]
-    const cmd = ['docker', 'run', ...options, fullImageName]
+    const cmd = ['docker', 'run', ...options, image]
     return _exec(cmd)
   } else {
-    core.debug(`Container ${fullImageName} is already running.`)
+    core.debug(`Container ${image} is already running.`)
     return Promise.resolve({stdout: '', stderr: ''})
   }
 }

@@ -42,12 +42,8 @@ describe('action', () => {
     // Set the action's inputs as return values from core.getInput()
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
-        case 'registry':
-          return 'registry.io'
-        case 'image-name':
-          return 'some-vendor/image-name'
-        case 'image-tag':
-          return 'some-image-tag'
+        case 'image':
+          return 'registry.io/some-vendor/image-name:some-image-tag'
         case 'network':
           return 'some-network'
         case 'plugins':
@@ -75,11 +71,9 @@ describe('action', () => {
     await run(mockRunEnv)
 
     // Assert the inputs
-    expect(mockCore.debug).toHaveBeenCalledWith('registry: registry.io')
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'image-name: some-vendor/image-name'
+      'image: registry.io/some-vendor/image-name:some-image-tag'
     )
-    expect(mockCore.debug).toHaveBeenCalledWith('image-tag: some-image-tag')
     expect(mockCore.debug).toHaveBeenCalledWith('network: some-network')
 
     expect(mockCore.debug).toHaveBeenCalledWith('db-host: some-db-host')
@@ -100,9 +94,7 @@ describe('action', () => {
 
     // Assert the container running function was called with correct params
     expect(mockRunEnv.ensureContainerRunning).toHaveBeenCalledWith(
-      'registry.io',
-      'some-vendor/image-name',
-      'some-image-tag',
+      'registry.io/some-vendor/image-name:some-image-tag',
       'some-network',
       [
         '--env="WORDPRESS_DB_HOST=some-db-host"',

@@ -16,9 +16,7 @@ import {_shellExec, _installScript} from './system'
  * to run the action with.
  *
  * @returns {Object} The configuration object.
- * @property {string} registry - The container registry.
- * @property {string} image_name - The name of the image.
- * @property {string} image_tag - The tag of the image.
+ * @property {string} image - The image to use.
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
@@ -30,9 +28,7 @@ import {_shellExec, _installScript} from './system'
  * @property {string} testCommandContext - The build context path.
  */
 function getConfigs(): {
-  registry: string
-  image_name: string
-  image_tag: string
+  image: string
   db_host: string
   db_name: string
   db_user: string
@@ -44,12 +40,8 @@ function getConfigs(): {
   testCommandContext: string
 } {
   // Input(s) for getting the Wordpress CI container image
-  const registry = core.getInput('registry').trim()
-  core.debug(`registry: ${registry}`)
-  const image_name = core.getInput('image-name').trim()
-  core.debug(`image-name: ${image_name}`)
-  const image_tag = core.getInput('image-tag').trim()
-  core.debug(`image-tag: ${image_tag}`)
+  const image = core.getInput('image').trim()
+  core.debug(`image: ${image}`)
 
   // Input(s) for configuring the Wordpress CI container
   // before starting it
@@ -95,9 +87,7 @@ function getConfigs(): {
   core.debug(`test-command-context: ${testCommandContext}`)
 
   return {
-    registry,
-    image_name,
-    image_tag,
+    image,
     network,
     plugins,
     db_host,
@@ -116,9 +106,7 @@ function getConfigs(): {
  */
 export interface runEnvironment {
   ensureContainerRunning?: (
-    registry: string,
-    image_name: string,
-    image_tag: string,
+    image: string,
     network: string,
     container_options?: string[],
     container_name?: string
@@ -213,9 +201,7 @@ export async function run({
     process.env['WORDPRESS_CI_URL'] = container_url
     try {
       await ensureContainerRunning(
-        configs.registry,
-        configs.image_name,
-        configs.image_tag,
+        configs.image,
         networkName,
         container_options
       )
