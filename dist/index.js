@@ -26063,6 +26063,41 @@ async function _waitForHttpServer(url, timeout) {
         }
     }
 }
+/**
+ * Run docker commands to get container information by matching the DNSNames
+ * to the given string.
+ *
+ * @param matchString The string to match in the container's DNS names.
+ * @returns {ContainerNetworkInfo} An object of container information of the container with matching DNS name.
+ * @throws {Error} If no container is found with the matching DNS name.
+ */
+async function _getContainerInfoByDNSName(matchString) {
+    const ids = await _exec(['docker', 'ps', '-q']);
+    const idList = ids.stdout
+        .trim()
+        .split('\n')
+        .filter(id => id.length > 0);
+    const { stdout } = await _exec(['docker', 'inspect', ...idList]);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const containerInfoList = JSON.parse(stdout);
+    const containerInfoListParsed = containerInfoList.map(containerInfo => {
+        return Object.entries(containerInfo.NetworkSettings.Networks).map(([k, v]) => ({
+            NetworkName: k,
+            DNSNames: v.DNSNames,
+            ContainerInfo: containerInfo
+        }));
+    });
+    for (const containerNetworks of containerInfoListParsed) {
+        for (const containerNetworkInfo of containerNetworks) {
+            for (const dnsName of containerNetworkInfo.DNSNames) {
+                if (dnsName.includes(matchString)) {
+                    return containerNetworkInfo;
+                }
+            }
+        }
+    }
+    throw new Error(`No container found with DNS name matching: ${matchString}`);
+}
 
 ;// CONCATENATED MODULE: ./src/main.ts
 
@@ -26156,7 +26191,7 @@ function getConfigs() {
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer, getContainerInfoByDNSName = _getContainerInfoByDNSName } = {}) {
     const startTime = new Date().getTime();
     let commandOutput = { stdout: '', stderr: '' };
     try {
@@ -26172,6 +26207,15 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         }
         if (configs.themes.length > 0) {
             container_options.push(...configs.themes.map(theme => `--volume=${theme}:/var/www/html/wp-content/themes/${(0,external_path_.basename)(theme)}`));
+        }
+        try {
+            const containerNetworkInfo = await getContainerInfoByDNSName(configs.db_host);
+            core.info(`Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`);
+            core.info(JSON.stringify(containerNetworkInfo.ContainerInfo, null, 2));
+        }
+        catch (error) {
+            core.setFailed(`Error finding container with DNS name ${configs.db_host}: ${error.message}`);
+            throw error;
         }
         core.startGroup('Start Wordpress CI container');
         const container_url = `http://localhost:8080`;

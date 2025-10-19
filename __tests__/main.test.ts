@@ -14,6 +14,11 @@ const mockCore = core as jest.Mocked<typeof core>
 function mockRunEnvironment(): runEnvironment {
   const ensureContainerRunning = jest.fn()
   const ensureContainerStopped = jest.fn()
+  const getContainerInfoByDNSName = jest.fn().mockResolvedValue({
+    NetworkName: 'test-network',
+    DNSNames: ['test-dns-name'],
+    ContainerInfo: {}
+  })
   const installScript = jest.fn()
   const waitForHttpServer = jest.fn()
   const _exec = jest.fn().mockResolvedValue({stdout: 'test output', stderr: ''})
@@ -21,6 +26,7 @@ function mockRunEnvironment(): runEnvironment {
   return {
     ensureContainerRunning,
     ensureContainerStopped,
+    getContainerInfoByDNSName,
     installScript,
     waitForHttpServer,
     _exec

@@ -123,3 +123,70 @@ export async function _waitForHttpServer(
     }
   }
 }
+
+/**
+ * Information about a Docker network.
+ */
+export type NetworkInfo = {
+  DNSNames: string[]
+}
+
+/**
+ * Information about a Docker container.
+ */
+export type ContainerInfo = {
+  Id: string
+  NetworkSettings: {
+    Networks: {[NetworkName: string]: NetworkInfo}
+  }
+}
+
+export type ContainerNetworkInfo = {
+  NetworkName: string
+  DNSNames: string[]
+  ContainerInfo: ContainerInfo
+}
+
+/**
+ * Run docker commands to get container information by matching the DNSNames
+ * to the given string.
+ *
+ * @param matchString The string to match in the container's DNS names.
+ * @returns {ContainerNetworkInfo} An object of container information of the container with matching DNS name.
+ * @throws {Error} If no container is found with the matching DNS name.
+ */
+export async function _getContainerInfoByDNSName(
+  matchString: string
+): Promise<ContainerNetworkInfo> {
+  const ids = await _exec(['docker', 'ps', '-q'])
+  const idList = ids.stdout
+    .trim()
+    .split('\n')
+    .filter(id => id.length > 0)
+
+  const {stdout} = await _exec(['docker', 'inspect', ...idList])
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const containerInfoList: ContainerInfo[] = JSON.parse(stdout)
+
+  const containerInfoListParsed = containerInfoList.map(containerInfo => {
+    return Object.entries(containerInfo.NetworkSettings.Networks).map(
+      ([k, v]: [string, NetworkInfo]): ContainerNetworkInfo => ({
+        NetworkName: k,
+        DNSNames: v.DNSNames,
+        ContainerInfo: containerInfo
+      })
+    )
+  })
+
+  for (const containerNetworks of containerInfoListParsed) {
+    for (const containerNetworkInfo of containerNetworks) {
+      for (const dnsName of containerNetworkInfo.DNSNames) {
+        if (dnsName.includes(matchString)) {
+          return containerNetworkInfo
+        }
+      }
+    }
+  }
+
+  throw new Error(`No container found with DNS name matching: ${matchString}`)
+}

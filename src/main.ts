@@ -4,8 +4,10 @@ import c from 'ansi-colors'
 import {
   _ensureContainerRunning,
   _ensureContainerStopped,
+  _getContainerInfoByDNSName,
   _proxiedContainerCommandScript,
-  _waitForHttpServer
+  _waitForHttpServer,
+  ContainerNetworkInfo
 } from './container'
 import {_shellExec, _installScript} from './system'
 
@@ -129,6 +131,9 @@ export interface runEnvironment {
   ) => Promise<{stdout: string; stderr: string}>
   installScript?: (script_fullpath: string, script_content: string) => void
   waitForHttpServer?: (url: string, timeout: number) => Promise<void>
+  getContainerInfoByDNSName?: (
+    matchString: string
+  ) => Promise<ContainerNetworkInfo>
   _exec?: (
     cmd: string[],
     options?: {
@@ -148,7 +153,8 @@ export async function run({
   ensureContainerRunning = _ensureContainerRunning,
   ensureContainerStopped = _ensureContainerStopped,
   installScript = _installScript,
-  waitForHttpServer = _waitForHttpServer
+  waitForHttpServer = _waitForHttpServer,
+  getContainerInfoByDNSName = _getContainerInfoByDNSName
 }: runEnvironment = {}): Promise<void> {
   const startTime = new Date().getTime()
   let commandOutput = {stdout: '', stderr: ''}
@@ -177,6 +183,23 @@ export async function run({
             `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`
         )
       )
+    }
+
+    try {
+      const containerNetworkInfo = await getContainerInfoByDNSName(
+        configs.db_host
+      )
+      core.info(
+        `Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`
+      )
+      core.info(JSON.stringify(containerNetworkInfo.ContainerInfo, null, 2))
+    } catch (error) {
+      core.setFailed(
+        `Error finding container with DNS name ${configs.db_host}: ${
+          (error as Error).message
+        }`
+      )
+      throw error
     }
 
     core.startGroup('Start Wordpress CI container')
