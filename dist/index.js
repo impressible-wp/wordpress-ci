@@ -26135,9 +26135,6 @@ function getConfigs() {
     // before starting it
     const network = core.getInput('network').trim();
     core.debug(`network: ${network}`);
-    if (network === '') {
-        throw new Error('The network input must be provided and not be empty.');
-    }
     const pluginsStr = core.getInput('plugins').trim();
     const plugins = pluginsStr
         .split('\n')
@@ -26208,20 +26205,28 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         if (configs.themes.length > 0) {
             container_options.push(...configs.themes.map(theme => `--volume=${theme}:/var/www/html/wp-content/themes/${(0,external_path_.basename)(theme)}`));
         }
-        try {
-            const containerNetworkInfo = await getContainerInfoByDNSName(configs.db_host);
-            core.info(`Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`);
-            core.info(JSON.stringify(containerNetworkInfo.ContainerInfo, null, 2));
+        // Determine the network name to use for the wordpress-ci container
+        let networkName = configs.network;
+        if (networkName === '') {
+            try {
+                core.info('No network specified, will attempt to derive the docker network name from the db hostname.');
+                const containerNetworkInfo = await getContainerInfoByDNSName(configs.db_host);
+                core.info(`Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`);
+                networkName = containerNetworkInfo.NetworkName;
+            }
+            catch (error) {
+                core.setFailed(`Error finding container with DNS name ${configs.db_host}: ${error.message}`);
+                throw error;
+            }
         }
-        catch (error) {
-            core.setFailed(`Error finding container with DNS name ${configs.db_host}: ${error.message}`);
-            throw error;
+        else {
+            core.info(`Using specified network: ${networkName}`);
         }
         core.startGroup('Start Wordpress CI container');
         const container_url = `http://localhost:8080`;
         process.env['WORDPRESS_CI_URL'] = container_url;
         try {
-            await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network, container_options);
+            await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, networkName, container_options);
         }
         catch (error) {
             core.setFailed(`Error starting container: ${error.message}`);

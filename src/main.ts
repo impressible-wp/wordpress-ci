@@ -55,9 +55,6 @@ function getConfigs(): {
   // before starting it
   const network = core.getInput('network').trim()
   core.debug(`network: ${network}`)
-  if (network === '') {
-    throw new Error('The network input must be provided and not be empty.')
-  }
 
   const pluginsStr = core.getInput('plugins').trim()
   const plugins = pluginsStr
@@ -185,21 +182,30 @@ export async function run({
       )
     }
 
-    try {
-      const containerNetworkInfo = await getContainerInfoByDNSName(
-        configs.db_host
-      )
-      core.info(
-        `Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`
-      )
-      core.info(JSON.stringify(containerNetworkInfo.ContainerInfo, null, 2))
-    } catch (error) {
-      core.setFailed(
-        `Error finding container with DNS name ${configs.db_host}: ${
-          (error as Error).message
-        }`
-      )
-      throw error
+    // Determine the network name to use for the wordpress-ci container
+    let networkName = configs.network
+    if (networkName === '') {
+      try {
+        core.info(
+          'No network specified, will attempt to derive the docker network name from the db hostname.'
+        )
+        const containerNetworkInfo = await getContainerInfoByDNSName(
+          configs.db_host
+        )
+        core.info(
+          `Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`
+        )
+        networkName = containerNetworkInfo.NetworkName
+      } catch (error) {
+        core.setFailed(
+          `Error finding container with DNS name ${configs.db_host}: ${
+            (error as Error).message
+          }`
+        )
+        throw error
+      }
+    } else {
+      core.info(`Using specified network: ${networkName}`)
     }
 
     core.startGroup('Start Wordpress CI container')
@@ -210,7 +216,7 @@ export async function run({
         configs.registry,
         configs.image_name,
         configs.image_tag,
-        configs.network,
+        networkName,
         container_options
       )
     } catch (error) {

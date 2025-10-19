@@ -20,7 +20,7 @@ inputs:
   # before starting it
   network:
     description: 'The Docker network to use. Must match that of the database container.'
-    required: true
+    required: false
     default: ''
   plugins:
     description: 'List of directories of plugins to test, one per line'

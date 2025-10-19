@@ -54,7 +54,6 @@ jobs:
           registry: ${{ inputs.registry }}
           image-name: ${{ inputs.image-name }}
           image-tag: ${{ inputs.image-tag }}
-          network: ${{ job.services.mysql.network }}
           plugins: ./example/myplugin
           db-host: ${{ env.DB_HOST }}
           db-name: ${{ env.DB_NAME }}
@@ -83,7 +82,6 @@ jobs:
           registry: ${{ inputs.registry }}
           image-name: ${{ inputs.image-name }}
           image-tag: ${{ inputs.image-tag }}
-          network: ${{ job.services.mysql.network }}
           db-host: ${{ env.DB_HOST }}
           db-name: ${{ env.DB_NAME }}
           db-user: ${{ env.DB_USER }}
@@ -109,7 +107,6 @@ jobs:
           registry: ${{ inputs.registry }}
           image-name: ${{ inputs.image-name }}
           image-tag: ${{ inputs.image-tag }}
-          network: ${{ job.services.mysql.network }}
           db-host: ${{ env.DB_HOST }}
           db-name: ${{ env.DB_NAME }}
           db-user: ${{ env.DB_USER }}
