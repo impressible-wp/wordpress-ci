@@ -45,6 +45,7 @@ set -e  # Re-enable exit on error
 
 # Check if the database should be clean on start
 if [ "${CLEAN_ON_START}" != "" ]; then
+  echo "Clean the database on start"
   wp db clean --yes
 fi
 
