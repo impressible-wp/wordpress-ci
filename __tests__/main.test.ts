@@ -1,4 +1,4 @@
-import {run, runEnvironment} from '../src/main'
+import {run, RunEnvironment} from '../src/main'
 import * as core from '@actions/core'
 
 // Mock the action's core module
@@ -11,7 +11,7 @@ jest.mock('@actions/github', () => ({
 
 const mockCore = core as jest.Mocked<typeof core>
 
-function mockRunEnvironment(): runEnvironment {
+function mockRunEnvironment(): RunEnvironment {
   const ensureContainerRunning = jest.fn()
   const ensureContainerStopped = jest.fn()
   const getContainerInfoByDNSName = jest.fn().mockResolvedValue({
@@ -19,17 +19,17 @@ function mockRunEnvironment(): runEnvironment {
     DNSNames: ['test-dns-name'],
     ContainerInfo: {}
   })
+  const showContainerLogs = jest.fn()
   const installScript = jest.fn()
   const waitForHttpServer = jest.fn()
-  const _exec = jest.fn().mockResolvedValue({stdout: 'test output', stderr: ''})
 
   return {
     ensureContainerRunning,
     ensureContainerStopped,
     getContainerInfoByDNSName,
     installScript,
-    waitForHttpServer,
-    _exec
+    showContainerLogs,
+    waitForHttpServer
   }
 }
 

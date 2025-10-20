@@ -26190,7 +26190,7 @@ function getConfigs() {
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer, getContainerInfoByDNSName = _getContainerInfoByDNSName } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, getContainerInfoByDNSName = _getContainerInfoByDNSName, installScript = _installScript, showContainerLogs = _showContainerLogs, waitForHttpServer = _waitForHttpServer } = {}) {
     const startTime = new Date().getTime();
     let commandOutput = { stdout: '', stderr: '' };
     try {
@@ -26246,11 +26246,11 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         catch (error) {
             // Something must have gone wrong starting the container
             // Get the logs of the container for debugging
-            await _showContainerLogs('wordpress-ci');
             core.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
             throw error;
         }
         finally {
+            await showContainerLogs('wordpress-ci');
             core.endGroup();
         }
         // Install proxy scripts

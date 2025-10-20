@@ -105,7 +105,7 @@ function getConfigs(): {
  * The helper functions that a run function needs.
  * For testing purpose, these functions can be mocked.
  */
-export interface runEnvironment {
+export interface RunEnvironment {
   ensureContainerRunning?: (
     image: string,
     network: string,
@@ -116,19 +116,13 @@ export interface runEnvironment {
     container_name: string
   ) => Promise<{stdout: string; stderr: string}>
   installScript?: (script_fullpath: string, script_content: string) => void
-  waitForHttpServer?: (url: string, timeout: number) => Promise<void>
   getContainerInfoByDNSName?: (
     matchString: string
   ) => Promise<ContainerNetworkInfo>
-  _exec?: (
-    cmd: string[],
-    options?: {
-      logStdout: boolean
-      logStderr: boolean
-      showCommand?: boolean
-      useTty?: boolean
-    }
+  showContainerLogs?: (
+    container_name: string
   ) => Promise<{stdout: string; stderr: string}>
+  waitForHttpServer?: (url: string, timeout: number) => Promise<void>
 }
 
 /**
@@ -138,10 +132,11 @@ export interface runEnvironment {
 export async function run({
   ensureContainerRunning = _ensureContainerRunning,
   ensureContainerStopped = _ensureContainerStopped,
+  getContainerInfoByDNSName = _getContainerInfoByDNSName,
   installScript = _installScript,
-  waitForHttpServer = _waitForHttpServer,
-  getContainerInfoByDNSName = _getContainerInfoByDNSName
-}: runEnvironment = {}): Promise<void> {
+  showContainerLogs = _showContainerLogs,
+  waitForHttpServer = _waitForHttpServer
+}: RunEnvironment = {}): Promise<void> {
   const startTime = new Date().getTime()
   let commandOutput = {stdout: '', stderr: ''}
 
@@ -223,12 +218,12 @@ export async function run({
     } catch (error) {
       // Something must have gone wrong starting the container
       // Get the logs of the container for debugging
-      await _showContainerLogs('wordpress-ci')
       core.setFailed(
         `Error waiting for Wordpress CI to be available: ${(error as Error).message}`
       )
       throw error
     } finally {
+      await showContainerLogs('wordpress-ci')
       core.endGroup()
     }
 
