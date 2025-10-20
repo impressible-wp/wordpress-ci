@@ -3,16 +3,24 @@ description: 'Wordpress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
   # Input(s) for getting the Wordpress CI container image
-  image:
-    description: 'The container image to use'
+  registry:
+    description: 'The container registry to pull the image from'
     required: false
-    default: 'ghcr.io/impressible-wp/wordpress-ci:latest'
+    default: 'ghcr.io'
+  image-name:
+    description: 'The name of the image to build'
+    required: false
+    default: 'impressible-wp/wordpress-ci'
+  image-tag:
+    description: 'The tag of the image to build'
+    required: false
+    default: 'latest'
 
   # Input(s) for configuring the Wordpress CI container
   # before starting it
   network:
     description: 'The Docker network to use. Must match that of the database container.'
-    required: false
+    required: true
     default: ''
   plugins:
     description: 'List of directories of plugins to test, one per line'
@@ -40,18 +48,6 @@ inputs:
     description: 'The password for the database user'
     required: false
     default: 'password'
-
-  # Input to control whether to clean the installation on start
-  clean-on-start:
-    description: 'Whether to clean the Wordpress installation on start'
-    required: false
-    default: 'true'
-
-  # Input(s) for importing database dumps
-  import-sql:
-    description: 'Path to an SQL file to import into the database. Please note that setting this would negate the unattained installation of Wordpress.'
-    required: false
-    default: ''
 
   # Input(s) for running tests
   test-command:
