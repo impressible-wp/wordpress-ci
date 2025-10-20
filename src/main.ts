@@ -8,7 +8,7 @@ import {
   _showContainerLogs,
   _proxiedContainerCommandScript,
   _waitForHttpServer,
-  ContainerNetworkInfo
+  ContainerNetworkInfo,
 } from './container'
 import {_shellExec, _installScript} from './system'
 
@@ -97,7 +97,7 @@ function getConfigs(): {
     db_password,
     themes,
     testCommand,
-    testCommandContext
+    testCommandContext,
   }
 }
 
@@ -110,17 +110,17 @@ export interface RunEnvironment {
     image: string,
     network: string,
     container_options?: string[],
-    container_name?: string
+    container_name?: string,
   ) => Promise<{stdout: string; stderr: string}>
   ensureContainerStopped?: (
-    container_name: string
+    container_name: string,
   ) => Promise<{stdout: string; stderr: string}>
   installScript?: (script_fullpath: string, script_content: string) => void
   getContainerInfoByDNSName?: (
-    matchString: string
+    matchString: string,
   ) => Promise<ContainerNetworkInfo>
   showContainerLogs?: (
-    container_name: string
+    container_name: string,
   ) => Promise<{stdout: string; stderr: string}>
   waitForHttpServer?: (url: string, timeout: number) => Promise<void>
 }
@@ -135,7 +135,7 @@ export async function run({
   getContainerInfoByDNSName = _getContainerInfoByDNSName,
   installScript = _installScript,
   showContainerLogs = _showContainerLogs,
-  waitForHttpServer = _waitForHttpServer
+  waitForHttpServer = _waitForHttpServer,
 }: RunEnvironment = {}): Promise<void> {
   const startTime = new Date().getTime()
   let commandOutput = {stdout: '', stderr: ''}
@@ -147,22 +147,22 @@ export async function run({
       `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
       `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
       `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
-      `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
+      `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`,
     ]
     if (configs.plugins.length > 0) {
       container_options.push(
         ...configs.plugins.map(
           plugin =>
-            `--volume=${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}`
-        )
+            `--volume=${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}`,
+        ),
       )
     }
     if (configs.themes.length > 0) {
       container_options.push(
         ...configs.themes.map(
           theme =>
-            `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`
-        )
+            `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`,
+        ),
       )
     }
 
@@ -171,20 +171,20 @@ export async function run({
     if (networkName === '') {
       try {
         core.info(
-          'No network specified, will attempt to derive the docker network name from the db hostname.'
+          'No network specified, will attempt to derive the docker network name from the db hostname.',
         )
         const containerNetworkInfo = await getContainerInfoByDNSName(
-          configs.db_host
+          configs.db_host,
         )
         core.info(
-          `Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`
+          `Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`,
         )
         networkName = containerNetworkInfo.NetworkName
       } catch (error) {
         core.setFailed(
           `Error finding container with DNS name ${configs.db_host}: ${
             (error as Error).message
-          }`
+          }`,
         )
         throw error
       }
@@ -199,7 +199,7 @@ export async function run({
       await ensureContainerRunning(
         configs.image,
         networkName,
-        container_options
+        container_options,
       )
     } catch (error) {
       core.setFailed(`Error starting container: ${(error as Error).message}`)
@@ -211,7 +211,7 @@ export async function run({
     try {
       core.startGroup('Verify Wordpress CI is up and running...')
       core.info(
-        `Waiting for Wordpress CI to be available at ${container_url}...`
+        `Waiting for Wordpress CI to be available at ${container_url}...`,
       )
       await waitForHttpServer(container_url, 10000) // Wait up to 10 seconds
       core.info('Confirmed Wordpress CI is up and running.')
@@ -219,7 +219,7 @@ export async function run({
       // Something must have gone wrong starting the container
       // Get the logs of the container for debugging
       core.setFailed(
-        `Error waiting for Wordpress CI to be available: ${(error as Error).message}`
+        `Error waiting for Wordpress CI to be available: ${(error as Error).message}`,
       )
       throw error
     } finally {
@@ -230,11 +230,11 @@ export async function run({
     // Install proxy scripts
     const container_name = 'wordpress-ci'
     core.startGroup(
-      'Setup proxy script to run command in Wordpress CI container'
+      'Setup proxy script to run command in Wordpress CI container',
     )
     installScript(
       '/usr/local/bin/wpci-cmd',
-      _proxiedContainerCommandScript(container_name)
+      _proxiedContainerCommandScript(container_name),
     )
     core.endGroup()
 

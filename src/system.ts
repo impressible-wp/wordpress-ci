@@ -21,8 +21,8 @@ export async function _exec(
     logStdout: false,
     logStderr: true,
     showCommand: false,
-    useTty: true
-  }
+    useTty: true,
+  },
 ): Promise<{stdout: string; stderr: string}> {
   // Show the command being executed
   const cmdStr = cmd.join(' ')
@@ -54,8 +54,8 @@ export async function _exec(
         if (options.logStderr) {
           core.info(c.magenta(output.trim()))
         }
-      }
-    }
+      },
+    },
   }
 
   stdout = ''
@@ -87,14 +87,14 @@ export async function _shellExec(
     logStdout: true,
     logStderr: true,
     showCommand: false,
-    useTty: true
-  }
+    useTty: true,
+  },
 ): Promise<{stdout: string; stderr: string}> {
   // Write the script to a temporary file
   // Generate a unique temporary file name
   const tmpScriptPath = `/tmp/temp-script-${Date.now()}.sh`
   fs.writeFileSync(tmpScriptPath, script, {
-    mode: 0o644
+    mode: 0o644,
   })
 
   core.info(`Executing script: ${script}\n`)
@@ -117,13 +117,13 @@ export async function _shellExec(
  */
 export function _installScript(
   script_fullpath: string,
-  script_content: string
+  script_content: string,
 ): void {
   if (fs.existsSync(script_fullpath)) {
     core.info(
       c.magenta(
-        `Script ${script_fullpath} already exists, skipping installation.`
-      )
+        `Script ${script_fullpath} already exists, skipping installation.`,
+      ),
     )
     return
   }
