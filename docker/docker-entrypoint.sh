@@ -8,7 +8,7 @@
 # developer wants.
 #
 set -o pipefail
-set -eux
+set -ex
 
 # Get the current working directory
 WORKDIR=$(pwd)
