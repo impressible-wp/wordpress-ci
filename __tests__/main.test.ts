@@ -58,6 +58,8 @@ describe('action', () => {
           return 'some-db-user'
         case 'db-password':
           return 'some-db-password'
+        case 'clean-on-start':
+          return 'true'
         case 'import-sql':
           return './some-db-export.sql'
         case 'test-command':
@@ -83,6 +85,8 @@ describe('action', () => {
     expect(mockCore.debug).toHaveBeenCalledWith('db-user: some-db-user')
     expect(mockCore.debug).toHaveBeenCalledWith('db-password: [REDACTED]')
 
+    expect(mockCore.debug).toHaveBeenCalledWith('clean-on-start: true')
+
     expect(mockCore.debug).toHaveBeenCalledWith(
       'import-sql: ./some-db-export.sql',
     )
@@ -107,6 +111,7 @@ describe('action', () => {
         '--env="WORDPRESS_DB_NAME=some-db-name"',
         '--env="WORDPRESS_DB_USER=some-db-user"',
         '--env="WORDPRESS_DB_PASSWORD=some-db-password"',
+        '--env="CLEAN_ON_START=yes"',
         '--volume=./plugin1:/var/www/html/wp-content/plugins/plugin1',
         '--volume=./plugin2:/var/www/html/wp-content/plugins/plugin2',
         '--volume=./theme1:/var/www/html/wp-content/themes/theme1',

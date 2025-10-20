@@ -41,6 +41,12 @@ inputs:
     required: false
     default: 'password'
 
+  # Input to control whether to clean the installation on start
+  clean-on-start:
+    description: 'Whether to clean the Wordpress installation on start'
+    required: false
+    default: 'true'
+
   # Input(s) for importing database dumps
   import-sql:
     description: 'Path to an SQL file to import into the database. Please note that setting this would negate the unattained installation of Wordpress.'
