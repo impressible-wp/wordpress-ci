@@ -36,8 +36,13 @@ services:
       - 3306:3306
 jobs:
   test-action:
-    name: Example Action
+    name: Test (php-${{ matrix.php-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # test against multiple PHP versions
+        php-version: [8.1, 8.2, 8.3, 8.4]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -54,6 +59,7 @@ jobs:
       - name: Test
         uses: impressible-wp/wordpress-ci@v1
         with:
+          image: ghcr.io/impressible-wp/wordpress-ci:php${{ matrix.php-version }}
           # Change the plugin and theme path to
           # the ones that match location in your repository
           plugins: |
