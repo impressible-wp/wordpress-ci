@@ -44,11 +44,15 @@ done
 set -e  # Re-enable exit on error
 
 # Check if the database should be clean on start
+echo "Check if need to clean database on start: CLEAN_ON_START='$CLEAN_ON_START'"
 if [ "$CLEAN_ON_START" != "" ]; then
   wp db clean --yes
+else
+  echo "Not cleaning the database on start"
 fi
 
 # Check if an import SQL file is specified and present.
+echo "IMPORT_SQL_FILE is set to: '$IMPORT_SQL_FILE'"
 if [ "$IMPORT_SQL_FILE" != "" ] && [ -f "$IMPORT_SQL_FILE" ]; then
   echo "Importing database from SQL file: $IMPORT_SQL_FILE"
   echo "Will skip unattended installation."
