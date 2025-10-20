@@ -25937,12 +25937,11 @@ async function _shellExec(script, options = {
     core.info(`Executing script: ${script}\n`);
     // Execute the script using bash
     // - "-e": exit immediately if a command exits with a non-zero status
-    // - "-u": treat unset variables as an error when substituting
     // - "-x": print each command before executing it
     // - "-o pipefail": the return value of a pipeline is the status of
     //   the last command to exit with a non-zero status,
     //   or zero if no command exited with a non-zero status
-    return _exec(['/bin/bash', '-exu', '-o', 'pipefail', tmpScriptPath], options);
+    return _exec(['/bin/bash', '-ex', '-o', 'pipefail', tmpScriptPath], options);
 }
 /**
  * Install a script file with given content if it does not already exist.
