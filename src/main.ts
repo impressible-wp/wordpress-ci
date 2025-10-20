@@ -171,6 +171,12 @@ export async function run({
         ),
       )
     }
+    if (configs.importSql !== '') {
+      container_options.push(
+        `--env="IMPORT_SQL_FILE=/opt/imports/import.sql"`,
+        `--volume=${configs.importSql}:/opt/imports/import.sql`,
+      )
+    }
 
     // Determine the network name to use for the wordpress-ci container
     let networkName = configs.network
