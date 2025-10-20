@@ -1,7 +1,7 @@
-# Combined Test Example
+# Plugin Test Example
 
 This folder only run acceptance test against Wordpress CI environment that mapped "myplugin"
-and "mytheme" to it.
+to it.
 
 ## Key Concepts
 
@@ -12,7 +12,7 @@ and "mytheme" to it.
 
 ## GitHub Action Example
 
-This is an example setup for a complicated test with multiple plugins and themes:
+This is an example setup for a testing with one plugin:
 
 ```yml
 name: Acceptance Test
@@ -36,13 +36,8 @@ services:
       - 3306:3306
 jobs:
   test-action:
-    name: Test (php-${{ matrix.php-version }})
+    name: Example Action
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # test against multiple PHP versions
-        php-version: [8.1, 8.2, 8.3, 8.4]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -59,15 +54,9 @@ jobs:
       - name: Test
         uses: impressible-wp/wordpress-ci@v1
         with:
-          image: ghcr.io/impressible-wp/wordpress-ci:php${{ matrix.php-version }}
           # Change the plugin and theme path to
           # the ones that match location in your repository
-          plugins: |
-            ./example/myplugin1
-            ./example/myplugin2
-          themes: |
-            ./example/mytheme
-            ./example/mychildtheme
+          plugins: ./example/myplugin
           db-host: ${{ env.DB_HOST }}
           db-name: ${{ env.DB_NAME }}
           db-user: ${{ env.DB_USER }}
@@ -76,12 +65,7 @@ jobs:
 
             # Running "server-side" commands in the Wordpress CI container
             wpci-cmd wp rewrite structure '/%postname%/'
-            wpci-cmd wp plugin activate myplugin1 myplugin2
-            wpci-cmd wp theme activate mychildtheme
-
-            # You may install other plugins or theme with the proxied wp-cli command
-            wpci-cmd wp install polylang
-            wpci-cmd wp activate polylang
+            wpci-cmd wp plugin activate myplugin
 
             # Your test may access the Wordpress CI's URL with this environment variable
             echo "Wordpress is accessible here: $WORDPRESS_CI_URL"
