@@ -30,13 +30,14 @@ import {_shellExec, _installScript} from './system'
  */
 function getConfigs(): {
   image: string
-  db_host: string
-  db_name: string
-  db_user: string
-  db_password: string
+  dbHost: string
+  dbName: string
+  dbUser: string
+  dbPassword: string
   network: string
   plugins: string[]
   themes: string[]
+  importSql: string
   testCommand: string
   testCommandContext: string
 } {
@@ -64,18 +65,22 @@ function getConfigs(): {
   core.debug(`themes: ${JSON.stringify(themes)}`)
 
   // Input(s) for the installation of Wordpress in the container
-  const db_host = core.getInput('db-host').trim()
-  core.debug(`db-host: ${db_host}`)
-  const db_name = core.getInput('db-name').trim()
-  core.debug(`db-name: ${db_name}`)
-  const db_user = core.getInput('db-user').trim()
-  core.debug(`db-user: ${db_user}`)
-  const db_password = core.getInput('db-password').trim()
-  if (db_password === '') {
+  const dbHost = core.getInput('db-host').trim()
+  core.debug(`db-host: ${dbHost}`)
+  const dbName = core.getInput('db-name').trim()
+  core.debug(`db-name: ${dbName}`)
+  const dbUser = core.getInput('db-user').trim()
+  core.debug(`db-user: ${dbUser}`)
+  const dbPassword = core.getInput('db-password').trim()
+  if (dbPassword === '') {
     core.debug(`db-password: [EMPTY]`)
   } else {
     core.debug(`db-password: [REDACTED]`)
   }
+
+  // Input(s) for importing database dumps
+  const importSql = core.getInput('import-sql').trim()
+  core.debug(`import-sql: ${importSql}`)
 
   // Input(s) for running tests
   const testCommand = core.getInput('test-command').trim()
@@ -91,10 +96,11 @@ function getConfigs(): {
     image,
     network,
     plugins,
-    db_host,
-    db_name,
-    db_user,
-    db_password,
+    dbHost,
+    dbName,
+    dbUser,
+    dbPassword,
+    importSql,
     themes,
     testCommand,
     testCommandContext,
@@ -144,10 +150,10 @@ export async function run({
     const configs = getConfigs()
 
     const container_options: string[] = [
-      `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
-      `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
-      `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
-      `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`,
+      `--env="WORDPRESS_DB_HOST=${configs.dbHost}"`,
+      `--env="WORDPRESS_DB_NAME=${configs.dbName}"`,
+      `--env="WORDPRESS_DB_USER=${configs.dbUser}"`,
+      `--env="WORDPRESS_DB_PASSWORD=${configs.dbPassword}"`,
     ]
     if (configs.plugins.length > 0) {
       container_options.push(
@@ -174,15 +180,15 @@ export async function run({
           'No network specified, will attempt to derive the docker network name from the db hostname.',
         )
         const containerNetworkInfo = await getContainerInfoByDNSName(
-          configs.db_host,
+          configs.dbHost,
         )
         core.info(
-          `Found container with DNS name ${configs.db_host} in network ${containerNetworkInfo.NetworkName}.`,
+          `Found container with DNS name ${configs.dbHost} in network ${containerNetworkInfo.NetworkName}.`,
         )
         networkName = containerNetworkInfo.NetworkName
       } catch (error) {
         core.setFailed(
-          `Error finding container with DNS name ${configs.db_host}: ${
+          `Error finding container with DNS name ${configs.dbHost}: ${
             (error as Error).message
           }`,
         )

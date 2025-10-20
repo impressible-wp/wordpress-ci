@@ -58,6 +58,8 @@ describe('action', () => {
           return 'some-db-user'
         case 'db-password':
           return 'some-db-password'
+        case 'import-sql':
+          return './some-db-export.sql'
         case 'test-command':
           return 'test command'
         case 'test-command-context':
@@ -80,6 +82,10 @@ describe('action', () => {
     expect(mockCore.debug).toHaveBeenCalledWith('db-name: some-db-name')
     expect(mockCore.debug).toHaveBeenCalledWith('db-user: some-db-user')
     expect(mockCore.debug).toHaveBeenCalledWith('db-password: [REDACTED]')
+
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      'import-sql: ./some-db-export.sql',
+    )
 
     expect(mockCore.debug).toHaveBeenCalledWith(
       `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`,

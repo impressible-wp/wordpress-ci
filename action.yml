@@ -41,6 +41,12 @@ inputs:
     required: false
     default: 'password'
 
+  # Input(s) for importing database dumps
+  import-sql:
+    description: 'Path to an SQL file to import into the database. Please note that setting this would negate the unattained installation of Wordpress.'
+    required: false
+    default: ''
+
   # Input(s) for running tests
   test-command:
     description: 'Command to use to run tests'
