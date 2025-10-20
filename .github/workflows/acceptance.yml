@@ -112,7 +112,7 @@ jobs:
           db-name: ${{ env.DB_NAME }}
           db-user: ${{ env.DB_USER }}
           db-password: ${{ env.DB_PASSWORD }}
-          import-file: ./example/import_test/dummy.sql
+          import-sql: ./example/import_test/dummy.sql
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
             COUNT=$(wpci-cmd wp db query "SELECT COUNT(*) FROM wp_dummy")
