@@ -49,6 +49,7 @@ if [ "${CLEAN_ON_START}" != "" ]; then
 fi
 
 # Check if an import SQL file is specified and present.
+echo "IMPORT_SQL_FILE is set to: '$IMPORT_SQL_FILE'"
 if [ "$IMPORT_SQL_FILE" != "" ] && [ -f "$IMPORT_SQL_FILE" ]; then
   echo "Importing database from SQL file: $IMPORT_SQL_FILE"
   echo "Will skip unattended installation."
