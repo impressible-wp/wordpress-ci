@@ -1,5 +1,5 @@
 #!/bin/bash
 
-wp-cli --allow-root $@
+wp-cli --allow-root "$@"
 
 exit $?

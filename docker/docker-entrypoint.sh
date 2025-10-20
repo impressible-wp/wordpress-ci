@@ -7,6 +7,11 @@
 # is the Wordpress installation directory, which is not the case how a plugin
 # developer wants.
 #
+set -o pipefail
+set -ex
+
+echo "Starting with environment variables:"
+env
 
 # Get the current working directory
 WORKDIR=$(pwd)
@@ -14,7 +19,7 @@ WORKDIR=$(pwd)
 # Install Wordpress to the folder if it is not there.
 if [ ! -f /var/www/html/wp-load.php ]; then
     echo "Copying Wordpress source to /var/www/html..."
-    cp -Rpdf /usr/src/wordpress/.htaccess /usr/src/wordpress/* /var/www/html
+    cp -Rpdf /usr/src/wordpress/* /var/www/html
 fi
 
 # Use a docker-specific version of wp-config by default.
@@ -30,6 +35,7 @@ fi
 echo "Waiting for database to be ready..."
 TIMEOUT=90
 COUNTDOWN=$TIMEOUT
+set +e  # Disable exit on error for the wait loop
 while ! wp db check --allow-root --quiet; do
     sleep 1
     COUNTDOWN=$((COUNTDOWN - 1))
@@ -38,28 +44,38 @@ while ! wp db check --allow-root --quiet; do
         exit 1
     fi
 done
+set -e  # Re-enable exit on error
 
 # Check if the database should be clean on start
-if [ "$CLEAN_ON_START" != "" ]; then
+echo "Check if need to clean database on start: CLEAN_ON_START='$CLEAN_ON_START'"
+if ! wp core is-installed --allow-root --quiet; then
+  echo "Wordpress is not installed yet, skipping database clean."
+elif [ "$CLEAN_ON_START" != "" ]; then
+  echo "Clean the database on start"
   wp db clean --yes
-fi
-
-# Check if Wordpress is already installed.
-if wp core is-installed --allow-root --quiet; then
-    echo "Wordpress is already installed, skipping setup."
 else
-    # If environment variables are set, use them to configure the database.
-    echo "Wordpress is not installed yet. Using wp-cli to perform unattended installation..."
-    wp core install \
-        --url="http://localhost" \
-        --title="${WORDPRESS_TITLE:-WordpressCI}" \
-        --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
-        --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
-        --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
+  echo "Not cleaning the database on start"
 fi
 
-# Configure permalinks to use "Post name" structure.
-wp rewrite structure '/%postname%/'
+# Check if an import SQL file is specified and present.
+echo "IMPORT_SQL_FILE is set to: '$IMPORT_SQL_FILE'"
+if [ "$IMPORT_SQL_FILE" != "" ] && [ -f "$IMPORT_SQL_FILE" ]; then
+  echo "Importing database from SQL file: $IMPORT_SQL_FILE"
+  echo "Will skip unattended installation."
+  wp db import "$IMPORT_SQL_FILE"
+elif wp core is-installed --allow-root --quiet; then
+  # Check if Wordpress is already installed.
+  echo "Wordpress is already installed, skipping setup."
+else
+  # If environment variables are set, use them to configure the database.
+  echo "Wordpress is not installed yet. Using wp-cli to perform unattended installation..."
+  wp core install \
+    --url="http://localhost" \
+    --title="${WORDPRESS_TITLE:-WordpressCI}" \
+    --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
+    --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
+    --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
+fi
 
 # Go to the original entrypoint directory
 cd /usr/src/wordpress
@@ -68,11 +84,5 @@ cd /usr/src/wordpress
 echo "Starting the original entrypoint script..."
 docker-php-entrypoint $@
 
-# Remember the original return code
-RET=$?
-
 # Go back to the original working directory
 cd "$WORKDIR"
-
-# Return the original return code
-exit $RET

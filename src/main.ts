@@ -1,18 +1,23 @@
 import * as core from '@actions/core'
-import * as exec from '@actions/exec'
-// import * as github from '@actions/github'
 import {basename} from 'path'
-import fs from 'fs'
 import c from 'ansi-colors'
+import {
+  _ensureContainerRunning,
+  _ensureContainerStopped,
+  _getContainerInfoByDNSName,
+  _showContainerLogs,
+  _proxiedContainerCommandScript,
+  _waitForHttpServer,
+  ContainerNetworkInfo,
+} from './container'
+import {_shellExec, _installScript} from './system'
 
 /**
  * Get the input values and form a configuration object
  * to run the action with.
  *
  * @returns {Object} The configuration object.
- * @property {string} registry - The container registry.
- * @property {string} image_name - The name of the image.
- * @property {string} image_tag - The tag of the image.
+ * @property {string} image - The image to use.
  * @property {string} network - The network for the container to use.
  * @property {string[]} plugins - The list of plugin paths.
  * @property {string[]} themes - The list of theme paths.
@@ -20,38 +25,33 @@ import c from 'ansi-colors'
  * @property {string} db_name - The database name.
  * @property {string} db_user - The database user.
  * @property {string} db_password - The database password.
+ * @property {string} cleanOnStart - Whether to clean the installation on start.
+ * @property {string} importSql - The path to the SQL file to import.
  * @property {string} testCommand - The test command to run.
  * @property {string} testCommandContext - The build context path.
  */
 function getConfigs(): {
-  registry: string
-  image_name: string
-  image_tag: string
-  db_host: string
-  db_name: string
-  db_user: string
-  db_password: string
+  image: string
+  dbHost: string
+  dbName: string
+  dbUser: string
+  dbPassword: string
   network: string
   plugins: string[]
   themes: string[]
+  cleanOnStart: boolean
+  importSql: string
   testCommand: string
   testCommandContext: string
 } {
   // Input(s) for getting the Wordpress CI container image
-  const registry = core.getInput('registry').trim()
-  core.debug(`registry: ${registry}`)
-  const image_name = core.getInput('image-name').trim()
-  core.debug(`image-name: ${image_name}`)
-  const image_tag = core.getInput('image-tag').trim()
-  core.debug(`image-tag: ${image_tag}`)
+  const image = core.getInput('image').trim()
+  core.debug(`image: ${image}`)
 
   // Input(s) for configuring the Wordpress CI container
   // before starting it
   const network = core.getInput('network').trim()
   core.debug(`network: ${network}`)
-  if (network === '') {
-    throw new Error('The network input must be provided and not be empty.')
-  }
 
   const pluginsStr = core.getInput('plugins').trim()
   const plugins = pluginsStr
@@ -68,18 +68,29 @@ function getConfigs(): {
   core.debug(`themes: ${JSON.stringify(themes)}`)
 
   // Input(s) for the installation of Wordpress in the container
-  const db_host = core.getInput('db-host').trim()
-  core.debug(`db-host: ${db_host}`)
-  const db_name = core.getInput('db-name').trim()
-  core.debug(`db-name: ${db_name}`)
-  const db_user = core.getInput('db-user').trim()
-  core.debug(`db-user: ${db_user}`)
-  const db_password = core.getInput('db-password').trim()
-  if (db_password === '') {
+  const dbHost = core.getInput('db-host').trim()
+  core.debug(`db-host: ${dbHost}`)
+  const dbName = core.getInput('db-name').trim()
+  core.debug(`db-name: ${dbName}`)
+  const dbUser = core.getInput('db-user').trim()
+  core.debug(`db-user: ${dbUser}`)
+  const dbPassword = core.getInput('db-password').trim()
+  if (dbPassword === '') {
     core.debug(`db-password: [EMPTY]`)
   } else {
     core.debug(`db-password: [REDACTED]`)
   }
+
+  // Input(s) for cleaning the installation on start
+  const cleanOnStartStr = core.getInput('clean-on-start').trim()
+  core.debug(`clean-on-start: ${cleanOnStartStr}`)
+  const cleanOnStart = ['true', 'yes', '1'].includes(
+    cleanOnStartStr.toLowerCase(),
+  )
+
+  // Input(s) for importing database dumps
+  const importSql = core.getInput('import-sql').trim()
+  core.debug(`import-sql: ${importSql}`)
 
   // Input(s) for running tests
   const testCommand = core.getInput('test-command').trim()
@@ -92,289 +103,43 @@ function getConfigs(): {
   core.debug(`test-command-context: ${testCommandContext}`)
 
   return {
-    registry,
-    image_name,
-    image_tag,
+    image,
     network,
     plugins,
-    db_host,
-    db_name,
-    db_user,
-    db_password,
+    dbHost,
+    dbName,
+    dbUser,
+    dbPassword,
+    cleanOnStart,
+    importSql,
     themes,
     testCommand,
-    testCommandContext
+    testCommandContext,
   }
-}
-
-/**
- * A simple function to execute command and pipe outputs
- * to core using @actions/exec for GitHub Actions compatibility.
- *
- * @param {string[]} cmd - The command to execute.
- * @returns {Promise<{stdout: string, stderr: string}>}
- */
-async function _exec(
-  cmd: string[],
-  options: {
-    logStdout: boolean
-    logStderr: boolean
-    showCommand?: boolean
-    useTty?: boolean
-  } = {
-    logStdout: false,
-    logStderr: true,
-    showCommand: false,
-    useTty: true
-  }
-): Promise<{stdout: string; stderr: string}> {
-  // Show the command being executed
-  const cmdStr = cmd.join(' ')
-  if (options.showCommand) {
-    core.info(`> ${c.blue(cmdStr)}`)
-  }
-
-  const [command, ...args] = cmd
-  if (!command) {
-    throw new Error('No command provided')
-  }
-
-  let stdout = ''
-  let stderr = ''
-
-  const execOptions: exec.ExecOptions = {
-    silent: true, // If logStdout is false, run silently
-    listeners: {
-      stdout: (data: Buffer) => {
-        const output = data.toString()
-        stdout += output
-        if (options.logStdout) {
-          core.info(output.trim())
-        }
-      },
-      stderr: (data: Buffer) => {
-        const output = data.toString()
-        stderr += output
-        if (options.logStderr) {
-          core.info(c.magenta(output.trim()))
-        }
-      }
-    }
-  }
-
-  stdout = ''
-  stderr = ''
-  const exitCode = await exec.exec(command, args, execOptions)
-  if (exitCode === 0) {
-    return {stdout, stderr}
-  } else {
-    core.info(c.red(stderr))
-    throw new Error(`command failed: ${cmdStr}\nexit code: ${exitCode}`)
-  }
-}
-
-async function _shellExec(
-  script: string,
-  options: {
-    logStdout: boolean
-    logStderr: boolean
-    showCommand?: boolean
-    useTty?: boolean
-  } = {
-    logStdout: true,
-    logStderr: true,
-    showCommand: false,
-    useTty: true
-  }
-): Promise<{stdout: string; stderr: string}> {
-  // Write the script to a temporary file
-  // Generate a unique temporary file name
-  const tmpScriptPath = `/tmp/temp-script-${Date.now()}.sh`
-  fs.writeFileSync(tmpScriptPath, script, {
-    mode: 0o644
-  })
-
-  core.info(`Executing script: ${script}\n`)
-
-  // Execute the script using bash
-  // - "-e": exit immediately if a command exits with a non-zero status
-  // - "-u": treat unset variables as an error when substituting
-  // - "-x": print each command before executing it
-  // - "-o pipefail": the return value of a pipeline is the status of
-  //   the last command to exit with a non-zero status,
-  //   or zero if no command exited with a non-zero status
-  return _exec(['/bin/bash', '-exu', '-o', 'pipefail', tmpScriptPath], options)
-}
-
-/**
- * Make sure the container mentioned is running in the background.
- *
- * @param registry
- * @param image_name
- * @param image_tag
- */
-async function _ensureContainerRunning(
-  registry: string,
-  image_name: string,
-  image_tag: string,
-  network: string,
-  container_options: string[] = [],
-  container_name = 'wordpress-ci'
-): Promise<{stdout: string; stderr: string}> {
-  const fullImageName = `${registry}/${image_name}:${image_tag}`
-  core.debug(`Ensuring container ${fullImageName} is running...`)
-
-  // Using docker command, check if the container is running.
-  // If not, start the container in detached mode.
-  // This is a placeholder implementation.
-  // In a real implementation, you would use child_process to run docker commands.
-  const {stdout} = await _exec([
-    'docker',
-    'ps',
-    '--quiet',
-    '--filter',
-    `name="${fullImageName}"`
-  ])
-  core.debug(`docker ps result: ${stdout}`)
-
-  // Run the container in the background
-  if (!stdout || stdout.toString().trim() === '') {
-    core.debug(`Container ${fullImageName} is not running. Starting it...`)
-    const options = [
-      '--detach',
-      `--name=${container_name}`,
-      '--publish=8080:80',
-      `--env="CLEAN_ON_START=yes"`,
-      `--network=${network}`,
-      ...container_options
-    ]
-    const cmd = ['docker', 'run', ...options, fullImageName]
-    return _exec(cmd)
-  } else {
-    core.debug(`Container ${fullImageName} is already running.`)
-    return Promise.resolve({stdout: '', stderr: ''})
-  }
-}
-
-/**
- * Ensure the specified container is stopped.
- * @param container_name
- * @returns {Object}
- * @property {string} stdout - The standard output from the command.
- * @property {string} stderr - The standard error from the command.
- */
-async function _ensureContainerStopped(
-  container_name: string
-): Promise<{stdout: string; stderr: string}> {
-  await _exec(['docker', 'container', 'stop', container_name])
-  return _exec(['docker', 'container', 'rm', container_name])
-}
-
-/**
- * Wait for an HTTP server to be available.
- * @param url An URL on the HTTP server that would return some status if server is on.
- * @param timeout The maximum time to wait, in milliseconds.
- * @returns A promise that resolves when the server is available, or rejects on timeout.
- */
-async function _waitForHttpServer(url: string, timeout: number): Promise<void> {
-  const startTime = Date.now()
-
-  const {stdout} = await _exec(['docker', 'ps'])
-  core.debug(`docker ps result: ${stdout}`)
-
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    try {
-      const result = await _exec(
-        [`curl -s -o /dev/null -w "%{http_code}" ${url}`],
-        {
-          logStdout: false,
-          logStderr: false,
-          showCommand: false
-        }
-      )
-      if (result.stdout.trim() !== '000') {
-        return
-      }
-      // Wait for a short interval before retrying
-      await new Promise(resolve => setTimeout(resolve, 500))
-    } catch (error) {
-      if (Date.now() - startTime > timeout) {
-        throw new Error(`Timeout waiting for server at ${url}`)
-      }
-    }
-  }
-}
-
-/**
- * Generates a bash script that proxies commands to the container.
- *
- * @param container_command_name The command to run in the container
- * @param container_name The name of the container
- *
- * @returns {string} The bash script content
- */
-function _proxiedContainerCommandScript(
-  container_name: string,
-  container_command_name = ''
-): string {
-  return `#!/bin/bash
-
-  docker exec -i ${container_name} ${container_command_name} "$@"
-
-  exit $?
-  `
-}
-
-/**
- * Install a script file with given content if it does not already exist.
- *
- * @param script_fullpath The full path to the script file.
- * @param script_content The content of the script file.
- * @returns {void}
- */
-function _installScript(script_fullpath: string, script_content: string): void {
-  if (fs.existsSync(script_fullpath)) {
-    core.info(
-      c.magenta(
-        `Script ${script_fullpath} already exists, skipping installation.`
-      )
-    )
-    return
-  }
-  core.info(c.blue(`Installing script to ${script_fullpath}...`))
-
-  // Write the script content to the file and make it executable
-  fs.writeFileSync(script_fullpath, script_content, {mode: 0o755})
 }
 
 /**
  * The helper functions that a run function needs.
  * For testing purpose, these functions can be mocked.
  */
-export interface runEnvironment {
+export interface RunEnvironment {
   ensureContainerRunning?: (
-    registry: string,
-    image_name: string,
-    image_tag: string,
+    image: string,
     network: string,
     container_options?: string[],
-    container_name?: string
+    container_name?: string,
   ) => Promise<{stdout: string; stderr: string}>
   ensureContainerStopped?: (
-    container_name: string
+    container_name: string,
   ) => Promise<{stdout: string; stderr: string}>
   installScript?: (script_fullpath: string, script_content: string) => void
-  waitForHttpServer?: (url: string, timeout: number) => Promise<void>
-  _exec?: (
-    cmd: string[],
-    options?: {
-      logStdout: boolean
-      logStderr: boolean
-      showCommand?: boolean
-      useTty?: boolean
-    }
+  getContainerInfoByDNSName?: (
+    matchString: string,
+  ) => Promise<ContainerNetworkInfo>
+  showContainerLogs?: (
+    container_name: string,
   ) => Promise<{stdout: string; stderr: string}>
+  waitForHttpServer?: (url: string, timeout: number) => Promise<void>
 }
 
 /**
@@ -384,9 +149,11 @@ export interface runEnvironment {
 export async function run({
   ensureContainerRunning = _ensureContainerRunning,
   ensureContainerStopped = _ensureContainerStopped,
+  getContainerInfoByDNSName = _getContainerInfoByDNSName,
   installScript = _installScript,
-  waitForHttpServer = _waitForHttpServer
-}: runEnvironment = {}): Promise<void> {
+  showContainerLogs = _showContainerLogs,
+  waitForHttpServer = _waitForHttpServer,
+}: RunEnvironment = {}): Promise<void> {
   const startTime = new Date().getTime()
   let commandOutput = {stdout: '', stderr: ''}
 
@@ -394,26 +161,62 @@ export async function run({
     const configs = getConfigs()
 
     const container_options: string[] = [
-      `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
-      `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
-      `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
-      `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
+      `--env=WORDPRESS_DB_HOST=${configs.dbHost}`,
+      `--env=WORDPRESS_DB_NAME=${configs.dbName}`,
+      `--env=WORDPRESS_DB_USER=${configs.dbUser}`,
+      `--env=WORDPRESS_DB_PASSWORD=${configs.dbPassword}`,
     ]
+
+    if (configs.cleanOnStart) {
+      container_options.push(`--env=CLEAN_ON_START=yes`)
+    }
     if (configs.plugins.length > 0) {
       container_options.push(
         ...configs.plugins.map(
           plugin =>
-            `--volume=${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}`
-        )
+            `--volume=${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}`,
+        ),
       )
     }
     if (configs.themes.length > 0) {
       container_options.push(
         ...configs.themes.map(
           theme =>
-            `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`
-        )
+            `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`,
+        ),
       )
+    }
+    if (configs.importSql !== '') {
+      container_options.push(
+        `--env=IMPORT_SQL_FILE=/opt/imports/import.sql`,
+        `--volume=${configs.importSql}:/opt/imports/import.sql`,
+      )
+    }
+
+    // Determine the network name to use for the wordpress-ci container
+    let networkName = configs.network
+    if (networkName === '') {
+      try {
+        core.info(
+          'No network specified, will attempt to derive the docker network name from the db hostname.',
+        )
+        const containerNetworkInfo = await getContainerInfoByDNSName(
+          configs.dbHost,
+        )
+        core.info(
+          `Found container with DNS name ${configs.dbHost} in network ${containerNetworkInfo.NetworkName}.`,
+        )
+        networkName = containerNetworkInfo.NetworkName
+      } catch (error) {
+        core.setFailed(
+          `Error finding container with DNS name ${configs.dbHost}: ${
+            (error as Error).message
+          }`,
+        )
+        throw error
+      }
+    } else {
+      core.info(`Using specified network: ${networkName}`)
     }
 
     core.startGroup('Start Wordpress CI container')
@@ -421,11 +224,9 @@ export async function run({
     process.env['WORDPRESS_CI_URL'] = container_url
     try {
       await ensureContainerRunning(
-        configs.registry,
-        configs.image_name,
-        configs.image_tag,
-        configs.network,
-        container_options
+        configs.image,
+        networkName,
+        container_options,
       )
     } catch (error) {
       core.setFailed(`Error starting container: ${(error as Error).message}`)
@@ -434,33 +235,41 @@ export async function run({
       core.endGroup()
     }
 
+    let confirmedUp = false
     try {
-      core.startGroup('Verify Wordpress CI is up and running')
+      core.startGroup('Verify Wordpress CI is up and running...')
       core.info(
-        `Waiting for Wordpress CI to be available at ${container_url}...`
+        `Waiting for Wordpress CI to be available at ${container_url}...`,
       )
       await waitForHttpServer(container_url, 10000) // Wait up to 10 seconds
+      core.info('Confirmed Wordpress CI is up and running.')
+      confirmedUp = true
     } catch (error) {
+      // Something must have gone wrong starting the container
+      // Get the logs of the container for debugging
       core.setFailed(
-        `Error waiting for Wordpress CI to be available: ${(error as Error).message}`
+        `Error waiting for Wordpress CI to be available: ${(error as Error).message}`,
       )
       throw error
     } finally {
-      core.endGroup()
+      await showContainerLogs('wordpress-ci')
+      if (confirmedUp) {
+        core.endGroup()
+      }
     }
 
     // Install proxy scripts
     const container_name = 'wordpress-ci'
     core.startGroup(
-      'Setup proxy script to run command in Wordpress CI container'
+      'Setup proxy script to run command in Wordpress CI container',
     )
     installScript(
       '/usr/local/bin/wpci-cmd',
-      _proxiedContainerCommandScript(container_name)
+      _proxiedContainerCommandScript(container_name),
     )
     core.endGroup()
 
-    // Download the frontpage on localhost:8080
+    // Run the test command
     try {
       // change to the test command context directory
       core.startGroup('Change to Test Command Context Directory')
