@@ -161,14 +161,14 @@ export async function run({
     const configs = getConfigs()
 
     const container_options: string[] = [
-      `--env="WORDPRESS_DB_HOST=${configs.dbHost}"`,
-      `--env="WORDPRESS_DB_NAME=${configs.dbName}"`,
-      `--env="WORDPRESS_DB_USER=${configs.dbUser}"`,
-      `--env="WORDPRESS_DB_PASSWORD=${configs.dbPassword}"`,
+      `--env=WORDPRESS_DB_HOST=${configs.dbHost}`,
+      `--env=WORDPRESS_DB_NAME=${configs.dbName}`,
+      `--env=WORDPRESS_DB_USER=${configs.dbUser}`,
+      `--env=WORDPRESS_DB_PASSWORD=${configs.dbPassword}`,
     ]
 
     if (configs.cleanOnStart) {
-      container_options.push(`--env="CLEAN_ON_START=yes"`)
+      container_options.push(`--env=CLEAN_ON_START=yes`)
     }
     if (configs.plugins.length > 0) {
       container_options.push(
@@ -188,7 +188,7 @@ export async function run({
     }
     if (configs.importSql !== '') {
       container_options.push(
-        `--env="IMPORT_SQL_FILE=/opt/imports/import.sql"`,
+        `--env=IMPORT_SQL_FILE=/opt/imports/import.sql`,
         `--volume=${configs.importSql}:/opt/imports/import.sql`,
       )
     }
