@@ -111,6 +111,8 @@ describe('action', () => {
         '--volume=./plugin2:/var/www/html/wp-content/plugins/plugin2',
         '--volume=./theme1:/var/www/html/wp-content/themes/theme1',
         '--volume=./theme2:/var/www/html/wp-content/themes/theme2',
+        '--env="IMPORT_SQL_FILE=/opt/imports/import.sql"',
+        '--volume=./some-db-export.sql:/opt/imports/import.sql',
       ],
     )
 

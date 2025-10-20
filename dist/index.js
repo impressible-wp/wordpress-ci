@@ -26211,6 +26211,9 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         if (configs.themes.length > 0) {
             container_options.push(...configs.themes.map(theme => `--volume=${theme}:/var/www/html/wp-content/themes/${(0,external_path_.basename)(theme)}`));
         }
+        if (configs.importSql !== '') {
+            container_options.push(`--env="IMPORT_SQL_FILE=/opt/imports/import.sql"`, `--volume=${configs.importSql}:/opt/imports/import.sql`);
+        }
         // Determine the network name to use for the wordpress-ci container
         let networkName = configs.network;
         if (networkName === '') {
