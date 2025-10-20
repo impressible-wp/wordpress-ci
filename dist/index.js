@@ -26258,11 +26258,13 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         finally {
             core.endGroup();
         }
+        let confirmedUp = false;
         try {
             core.startGroup('Verify Wordpress CI is up and running...');
             core.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
             await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
             core.info('Confirmed Wordpress CI is up and running.');
+            confirmedUp = true;
         }
         catch (error) {
             // Something must have gone wrong starting the container
@@ -26272,14 +26274,16 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         }
         finally {
             await showContainerLogs('wordpress-ci');
-            core.endGroup();
+            if (confirmedUp) {
+                core.endGroup();
+            }
         }
         // Install proxy scripts
         const container_name = 'wordpress-ci';
         core.startGroup('Setup proxy script to run command in Wordpress CI container');
         installScript('/usr/local/bin/wpci-cmd', _proxiedContainerCommandScript(container_name));
         core.endGroup();
-        // Download the frontpage on localhost:8080
+        // Run the test command
         try {
             // change to the test command context directory
             core.startGroup('Change to Test Command Context Directory');
