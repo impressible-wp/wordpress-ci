@@ -7,6 +7,8 @@
 # is the Wordpress installation directory, which is not the case how a plugin
 # developer wants.
 #
+set -o pipefail
+set -eux
 
 # Get the current working directory
 WORKDIR=$(pwd)
@@ -14,7 +16,7 @@ WORKDIR=$(pwd)
 # Install Wordpress to the folder if it is not there.
 if [ ! -f /var/www/html/wp-load.php ]; then
     echo "Copying Wordpress source to /var/www/html..."
-    cp -Rpdf /usr/src/wordpress/.htaccess /usr/src/wordpress/* /var/www/html
+    cp -Rpdf /usr/src/wordpress/* /var/www/html
 fi
 
 # Use a docker-specific version of wp-config by default.
@@ -30,6 +32,7 @@ fi
 echo "Waiting for database to be ready..."
 TIMEOUT=90
 COUNTDOWN=$TIMEOUT
+set +e  # Disable exit on error for the wait loop
 while ! wp db check --allow-root --quiet; do
     sleep 1
     COUNTDOWN=$((COUNTDOWN - 1))
@@ -38,6 +41,7 @@ while ! wp db check --allow-root --quiet; do
         exit 1
     fi
 done
+set -e  # Re-enable exit on error
 
 # Check if the database should be clean on start
 if [ "$CLEAN_ON_START" != "" ]; then
@@ -70,11 +74,5 @@ cd /usr/src/wordpress
 echo "Starting the original entrypoint script..."
 docker-php-entrypoint $@
 
-# Remember the original return code
-RET=$?
-
 # Go back to the original working directory
 cd "$WORKDIR"
-
-# Return the original return code
-exit $RET
