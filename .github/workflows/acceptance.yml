@@ -115,9 +115,11 @@ jobs:
           import-sql: ./example/import_test/dummy.sql
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
-            COUNT=$(wpci-cmd wp db query "SELECT COUNT(*) FROM wp_dummy")
+            COUNT=$(wpci-cmd wp db query --skip-column-names "SELECT COUNT(*) FROM wp_dummy" | tr -d ' \n')
 
-            if [ "$COUNT" -ne "3" ]; then
+            if [ "$COUNT" == "3" ]; then
+              echo "Import test passed, found 3 rows in wp_dummy table"
+            else
               echo "Expected 3 rows in wp_dummy table, found $COUNT"
               exit 1
             fi
