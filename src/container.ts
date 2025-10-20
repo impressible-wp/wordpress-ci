@@ -12,7 +12,7 @@ export async function _ensureContainerRunning(
   image: string,
   network: string,
   container_options: string[] = [],
-  container_name = 'wordpress-ci'
+  container_name = 'wordpress-ci',
 ): Promise<{stdout: string; stderr: string}> {
   core.debug(`Ensuring container ${image} is running...`)
 
@@ -25,7 +25,7 @@ export async function _ensureContainerRunning(
     'ps',
     '--quiet',
     '--filter',
-    `name="${image}"`
+    `name="${image}"`,
   ])
   core.debug(`docker ps result: ${stdout}`)
 
@@ -38,7 +38,7 @@ export async function _ensureContainerRunning(
       '--publish=8080:80',
       `--env="CLEAN_ON_START=yes"`,
       `--network=${network}`,
-      ...container_options
+      ...container_options,
     ]
     const cmd = ['docker', 'run', ...options, image]
     return _exec(cmd)
@@ -56,7 +56,7 @@ export async function _ensureContainerRunning(
  * @property {string} stderr - The standard error from the command.
  */
 export async function _ensureContainerStopped(
-  container_name: string
+  container_name: string,
 ): Promise<{stdout: string; stderr: string}> {
   await _exec(['docker', 'container', 'stop', container_name])
   return _exec(['docker', 'container', 'rm', container_name])
@@ -72,7 +72,7 @@ export async function _ensureContainerStopped(
  */
 export function _proxiedContainerCommandScript(
   container_name: string,
-  container_command_name = ''
+  container_command_name = '',
 ): string {
   return `#!/bin/bash
 
@@ -90,7 +90,7 @@ export function _proxiedContainerCommandScript(
  */
 export async function _waitForHttpServer(
   url: string,
-  timeout: number
+  timeout: number,
 ): Promise<void> {
   const startTime = Date.now()
 
@@ -105,8 +105,8 @@ export async function _waitForHttpServer(
         {
           logStdout: false,
           logStderr: false,
-          showCommand: false
-        }
+          showCommand: false,
+        },
       )
       if (result.stdout.trim() !== '000') {
         return
@@ -153,7 +153,7 @@ export type ContainerNetworkInfo = {
  * @throws {Error} If no container is found with the matching DNS name.
  */
 export async function _getContainerInfoByDNSName(
-  matchString: string
+  matchString: string,
 ): Promise<ContainerNetworkInfo> {
   const ids = await _exec(['docker', 'ps', '-q'])
   const idList = ids.stdout
@@ -170,8 +170,8 @@ export async function _getContainerInfoByDNSName(
       ([k, v]: [string, NetworkInfo]): ContainerNetworkInfo => ({
         NetworkName: k,
         DNSNames: v.DNSNames,
-        ContainerInfo: containerInfo
-      })
+        ContainerInfo: containerInfo,
+      }),
     )
   })
 
@@ -194,11 +194,11 @@ export async function _getContainerInfoByDNSName(
  * @returns The logs of the container.
  */
 export async function _showContainerLogs(
-  container_name: string
+  container_name: string,
 ): Promise<{stdout: string; stderr: string}> {
   return _exec(['docker', 'container', 'logs', container_name], {
     logStdout: true,
     logStderr: true,
-    showCommand: true
+    showCommand: true,
   })
 }

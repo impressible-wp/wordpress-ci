@@ -5,8 +5,8 @@ import * as core from '@actions/core'
 jest.mock('@actions/core')
 jest.mock('@actions/github', () => ({
   context: {
-    payload: {}
-  }
+    payload: {},
+  },
 }))
 
 const mockCore = core as jest.Mocked<typeof core>
@@ -17,7 +17,7 @@ function mockRunEnvironment(): RunEnvironment {
   const getContainerInfoByDNSName = jest.fn().mockResolvedValue({
     NetworkName: 'test-network',
     DNSNames: ['test-dns-name'],
-    ContainerInfo: {}
+    ContainerInfo: {},
   })
   const showContainerLogs = jest.fn()
   const installScript = jest.fn()
@@ -29,7 +29,7 @@ function mockRunEnvironment(): RunEnvironment {
     getContainerInfoByDNSName,
     installScript,
     showContainerLogs,
-    waitForHttpServer
+    waitForHttpServer,
   }
 }
 
@@ -72,7 +72,7 @@ describe('action', () => {
 
     // Assert the inputs
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'image: registry.io/some-vendor/image-name:some-image-tag'
+      'image: registry.io/some-vendor/image-name:some-image-tag',
     )
     expect(mockCore.debug).toHaveBeenCalledWith('network: some-network')
 
@@ -82,14 +82,14 @@ describe('action', () => {
     expect(mockCore.debug).toHaveBeenCalledWith('db-password: [REDACTED]')
 
     expect(mockCore.debug).toHaveBeenCalledWith(
-      `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`
+      `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith(
-      `themes: ${JSON.stringify(['./theme1', './theme2'])}`
+      `themes: ${JSON.stringify(['./theme1', './theme2'])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith('test-command: test command')
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'test-command-context: ./example'
+      'test-command-context: ./example',
     )
 
     // Assert the container running function was called with correct params
@@ -104,18 +104,18 @@ describe('action', () => {
         '--volume=./plugin1:/var/www/html/wp-content/plugins/plugin1',
         '--volume=./plugin2:/var/www/html/wp-content/plugins/plugin2',
         '--volume=./theme1:/var/www/html/wp-content/themes/theme1',
-        '--volume=./theme2:/var/www/html/wp-content/themes/theme2'
-      ]
+        '--volume=./theme2:/var/www/html/wp-content/themes/theme2',
+      ],
     )
 
     // Assert the outputs
     expect(mockCore.setOutput).toHaveBeenCalledWith(
       'stdout',
-      expect.any(String)
+      expect.any(String),
     )
     expect(mockCore.setOutput).toHaveBeenCalledWith(
       'stderr',
-      expect.any(String)
+      expect.any(String),
     )
     expect(mockCore.setOutput).toHaveBeenCalledWith('time', expect.any(Number))
   })
@@ -141,7 +141,7 @@ describe('action', () => {
 
     // Assert the outputs and debug messages
     expect(mockCore.debug).toHaveBeenCalledWith(
-      `plugins: ${JSON.stringify([])}`
+      `plugins: ${JSON.stringify([])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith(`themes: ${JSON.stringify([])}`)
     expect(mockCore.debug).toHaveBeenCalledWith('test-command-context: .')

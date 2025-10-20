@@ -25872,7 +25872,7 @@ async function _exec(cmd, options = {
     logStdout: false,
     logStderr: true,
     showCommand: false,
-    useTty: true
+    useTty: true,
 }) {
     // Show the command being executed
     const cmdStr = cmd.join(' ');
@@ -25901,8 +25901,8 @@ async function _exec(cmd, options = {
                 if (options.logStderr) {
                     core.info(ansi_colors_default().magenta(output.trim()));
                 }
-            }
-        }
+            },
+        },
     };
     stdout = '';
     stderr = '';
@@ -25926,13 +25926,13 @@ async function _shellExec(script, options = {
     logStdout: true,
     logStderr: true,
     showCommand: false,
-    useTty: true
+    useTty: true,
 }) {
     // Write the script to a temporary file
     // Generate a unique temporary file name
     const tmpScriptPath = `/tmp/temp-script-${Date.now()}.sh`;
     external_fs_default().writeFileSync(tmpScriptPath, script, {
-        mode: 0o644
+        mode: 0o644,
     });
     core.info(`Executing script: ${script}\n`);
     // Execute the script using bash
@@ -25981,7 +25981,7 @@ async function _ensureContainerRunning(image, network, container_options = [], c
         'ps',
         '--quiet',
         '--filter',
-        `name="${image}"`
+        `name="${image}"`,
     ]);
     core.debug(`docker ps result: ${stdout}`);
     // Run the container in the background
@@ -25993,7 +25993,7 @@ async function _ensureContainerRunning(image, network, container_options = [], c
             '--publish=8080:80',
             `--env="CLEAN_ON_START=yes"`,
             `--network=${network}`,
-            ...container_options
+            ...container_options,
         ];
         const cmd = ['docker', 'run', ...options, image];
         return _exec(cmd);
@@ -26046,7 +26046,7 @@ async function _waitForHttpServer(url, timeout) {
             const result = await _exec([`curl -s -o /dev/null -w "%{http_code}" ${url}`], {
                 logStdout: false,
                 logStderr: false,
-                showCommand: false
+                showCommand: false,
             });
             if (result.stdout.trim() !== '000') {
                 return;
@@ -26082,7 +26082,7 @@ async function _getContainerInfoByDNSName(matchString) {
         return Object.entries(containerInfo.NetworkSettings.Networks).map(([k, v]) => ({
             NetworkName: k,
             DNSNames: v.DNSNames,
-            ContainerInfo: containerInfo
+            ContainerInfo: containerInfo,
         }));
     });
     for (const containerNetworks of containerInfoListParsed) {
@@ -26105,7 +26105,7 @@ async function _showContainerLogs(container_name) {
     return _exec(['docker', 'container', 'logs', container_name], {
         logStdout: true,
         logStderr: true,
-        showCommand: true
+        showCommand: true,
     });
 }
 
@@ -26183,14 +26183,14 @@ function getConfigs() {
         db_password,
         themes,
         testCommand,
-        testCommandContext
+        testCommandContext,
     };
 }
 /**
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, getContainerInfoByDNSName = _getContainerInfoByDNSName, installScript = _installScript, showContainerLogs = _showContainerLogs, waitForHttpServer = _waitForHttpServer } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, getContainerInfoByDNSName = _getContainerInfoByDNSName, installScript = _installScript, showContainerLogs = _showContainerLogs, waitForHttpServer = _waitForHttpServer, } = {}) {
     const startTime = new Date().getTime();
     let commandOutput = { stdout: '', stderr: '' };
     try {
@@ -26199,7 +26199,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
             `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
             `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
-            `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
+            `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`,
         ];
         if (configs.plugins.length > 0) {
             container_options.push(...configs.plugins.map(plugin => `--volume=${plugin}:/var/www/html/wp-content/plugins/${(0,external_path_.basename)(plugin)}`));
