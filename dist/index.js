@@ -25996,7 +25996,11 @@ async function _ensureContainerRunning(image, network, container_options = [], c
             ...container_options,
         ];
         const cmd = ['docker', 'run', ...options, image];
-        return _exec(cmd);
+        return _exec(cmd, {
+            logStdout: true,
+            logStderr: true,
+            showCommand: true,
+        });
     }
     else {
         core.debug(`Container ${image} is already running.`);

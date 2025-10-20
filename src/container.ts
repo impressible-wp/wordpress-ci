@@ -41,7 +41,11 @@ export async function _ensureContainerRunning(
       ...container_options,
     ]
     const cmd = ['docker', 'run', ...options, image]
-    return _exec(cmd)
+    return _exec(cmd, {
+      logStdout: true,
+      logStderr: true,
+      showCommand: true,
+    })
   } else {
     core.debug(`Container ${image} is already running.`)
     return Promise.resolve({stdout: '', stderr: ''})
