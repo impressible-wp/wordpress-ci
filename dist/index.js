@@ -26102,8 +26102,12 @@ async function _getContainerInfoByDNSName(matchString) {
  * @param container_name The name of the container to get logs from.
  * @returns The logs of the container.
  */
-async function _getContainerLogs(container_name) {
-    return _exec(['docker', 'container', 'logs', container_name]);
+async function _showContainerLogs(container_name) {
+    return _exec(['docker', 'container', 'logs', container_name], {
+        logStdout: true,
+        logStderr: true,
+        showCommand: true
+    });
 }
 
 ;// CONCATENATED MODULE: ./src/main.ts
@@ -26242,8 +26246,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         catch (error) {
             // Something must have gone wrong starting the container
             // Get the logs of the container for debugging
-            const containerLogs = await _getContainerLogs('wordpress-ci');
-            core.warning(`Container logs:\n${containerLogs.stdout}`);
+            await _showContainerLogs('wordpress-ci');
             core.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
             throw error;
         }

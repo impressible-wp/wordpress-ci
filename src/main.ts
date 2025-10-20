@@ -5,7 +5,7 @@ import {
   _ensureContainerRunning,
   _ensureContainerStopped,
   _getContainerInfoByDNSName,
-  _getContainerLogs,
+  _showContainerLogs,
   _proxiedContainerCommandScript,
   _waitForHttpServer,
   ContainerNetworkInfo
@@ -222,8 +222,7 @@ export async function run({
     } catch (error) {
       // Something must have gone wrong starting the container
       // Get the logs of the container for debugging
-      const containerLogs = await _getContainerLogs('wordpress-ci')
-      core.warning(`Container logs:\n${containerLogs.stdout}`)
+      await _showContainerLogs('wordpress-ci')
       core.setFailed(
         `Error waiting for Wordpress CI to be available: ${(error as Error).message}`
       )

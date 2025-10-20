@@ -193,8 +193,12 @@ export async function _getContainerInfoByDNSName(
  * @param container_name The name of the container to get logs from.
  * @returns The logs of the container.
  */
-export async function _getContainerLogs(
+export async function _showContainerLogs(
   container_name: string
 ): Promise<{stdout: string; stderr: string}> {
-  return _exec(['docker', 'container', 'logs', container_name])
+  return _exec(['docker', 'container', 'logs', container_name], {
+    logStdout: true,
+    logStderr: true,
+    showCommand: true
+  })
 }
