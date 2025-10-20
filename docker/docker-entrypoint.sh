@@ -10,6 +10,9 @@
 set -o pipefail
 set -ex
 
+echo "Show all environment variables:"
+env
+
 # Get the current working directory
 WORKDIR=$(pwd)
 
