@@ -48,7 +48,9 @@ set -e  # Re-enable exit on error
 
 # Check if the database should be clean on start
 echo "Check if need to clean database on start: CLEAN_ON_START='$CLEAN_ON_START'"
-if [ "${CLEAN_ON_START}" != "" ]; then
+if ! wp core is-installed --allow-root --quiet; then
+  echo "Wordpress is not installed yet, skipping database clean."
+elif [ "$CLEAN_ON_START" != "" ]; then
   echo "Clean the database on start"
   wp db clean --yes
 else
