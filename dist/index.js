@@ -25826,7 +25826,7 @@ module.exports = {
 /***/ ((module, __unused_webpack___webpack_exports__, __nccwpck_require__) => {
 
 __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
-/* harmony import */ var _main__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(1730);
+/* harmony import */ var _main__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(8225);
 
 await (0,_main__WEBPACK_IMPORTED_MODULE_0__/* .run */ .e)();
 
@@ -25835,110 +25835,32 @@ __webpack_async_result__();
 
 /***/ }),
 
-/***/ 1730:
+/***/ 8225:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
-/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
-/* harmony export */   e: () => (/* binding */ run)
-/* harmony export */ });
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(7484);
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5236);
-/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_exec__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(6928);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(9896);
-/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(fs__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(4801);
-/* harmony import */ var ansi_colors__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__nccwpck_require__.n(ansi_colors__WEBPACK_IMPORTED_MODULE_4__);
+
+// EXPORTS
+__nccwpck_require__.d(__webpack_exports__, {
+  e: () => (/* binding */ run)
+});
+
+// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
+var core = __nccwpck_require__(7484);
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(6928);
+// EXTERNAL MODULE: ./node_modules/ansi-colors/index.js
+var ansi_colors = __nccwpck_require__(4801);
+var ansi_colors_default = /*#__PURE__*/__nccwpck_require__.n(ansi_colors);
+// EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
+var exec = __nccwpck_require__(5236);
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(9896);
+var external_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_fs_);
+;// CONCATENATED MODULE: ./src/system.ts
 
 
-// import * as github from '@actions/github'
 
 
-
-/**
- * Get the input values and form a configuration object
- * to run the action with.
- *
- * @returns {Object} The configuration object.
- * @property {string} registry - The container registry.
- * @property {string} image_name - The name of the image.
- * @property {string} image_tag - The tag of the image.
- * @property {string} network - The network for the container to use.
- * @property {string[]} plugins - The list of plugin paths.
- * @property {string[]} themes - The list of theme paths.
- * @property {string} db_host - The database host.
- * @property {string} db_name - The database name.
- * @property {string} db_user - The database user.
- * @property {string} db_password - The database password.
- * @property {string} testCommand - The test command to run.
- * @property {string} testCommandContext - The build context path.
- */
-function getConfigs() {
-    // Input(s) for getting the Wordpress CI container image
-    const registry = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('registry').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`registry: ${registry}`);
-    const image_name = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('image-name').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`image-name: ${image_name}`);
-    const image_tag = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('image-tag').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`image-tag: ${image_tag}`);
-    // Input(s) for configuring the Wordpress CI container
-    // before starting it
-    const network = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('network').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`network: ${network}`);
-    if (network === '') {
-        throw new Error('The network input must be provided and not be empty.');
-    }
-    const pluginsStr = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('plugins').trim();
-    const plugins = pluginsStr
-        .split('\n')
-        .map(p => p.trim())
-        .filter(p => p);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`plugins: ${JSON.stringify(plugins)}`);
-    const themesStr = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('themes').trim();
-    const themes = themesStr
-        .split('\n')
-        .map(t => t.trim())
-        .filter(t => t);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`themes: ${JSON.stringify(themes)}`);
-    // Input(s) for the installation of Wordpress in the container
-    const db_host = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-host').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-host: ${db_host}`);
-    const db_name = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-name').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-name: ${db_name}`);
-    const db_user = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-user').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-user: ${db_user}`);
-    const db_password = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('db-password').trim();
-    if (db_password === '') {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-password: [EMPTY]`);
-    }
-    else {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`db-password: [REDACTED]`);
-    }
-    // Input(s) for running tests
-    const testCommand = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command').trim();
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`test-command: ${testCommand}`);
-    let testCommandContext = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('test-command-context').trim();
-    if (testCommandContext === '') {
-        testCommandContext = '.';
-    }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`test-command-context: ${testCommandContext}`);
-    return {
-        registry,
-        image_name,
-        image_tag,
-        network,
-        plugins,
-        db_host,
-        db_name,
-        db_user,
-        db_password,
-        themes,
-        testCommand,
-        testCommandContext
-    };
-}
 /**
  * A simple function to execute command and pipe outputs
  * to core using @actions/exec for GitHub Actions compatibility.
@@ -25950,12 +25872,12 @@ async function _exec(cmd, options = {
     logStdout: false,
     logStderr: true,
     showCommand: false,
-    useTty: true
+    useTty: true,
 }) {
     // Show the command being executed
     const cmdStr = cmd.join(' ');
     if (options.showCommand) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`> ${ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(cmdStr)}`);
+        core.info(`> ${ansi_colors_default().blue(cmdStr)}`);
     }
     const [command, ...args] = cmd;
     if (!command) {
@@ -25970,51 +25892,77 @@ async function _exec(cmd, options = {
                 const output = data.toString();
                 stdout += output;
                 if (options.logStdout) {
-                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(output.trim());
+                    core.info(output.trim());
                 }
             },
             stderr: (data) => {
                 const output = data.toString();
                 stderr += output;
                 if (options.logStderr) {
-                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(output.trim()));
+                    core.info(ansi_colors_default().magenta(output.trim()));
                 }
-            }
-        }
+            },
+        },
     };
     stdout = '';
     stderr = '';
-    const exitCode = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec(command, args, execOptions);
+    const exitCode = await exec.exec(command, args, execOptions);
     if (exitCode === 0) {
         return { stdout, stderr };
     }
     else {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().red(stderr));
+        core.info(ansi_colors_default().red(stderr));
         throw new Error(`command failed: ${cmdStr}\nexit code: ${exitCode}`);
     }
 }
+/**
+ * Execute the given script text as bash shell script.
+ *
+ * @param script
+ * @param options
+ * @returns
+ */
 async function _shellExec(script, options = {
     logStdout: true,
     logStderr: true,
     showCommand: false,
-    useTty: true
+    useTty: true,
 }) {
     // Write the script to a temporary file
     // Generate a unique temporary file name
     const tmpScriptPath = `/tmp/temp-script-${Date.now()}.sh`;
-    fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(tmpScriptPath, script, {
-        mode: 0o644
+    external_fs_default().writeFileSync(tmpScriptPath, script, {
+        mode: 0o644,
     });
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Executing script: ${script}\n`);
+    core.info(`Executing script: ${script}\n`);
     // Execute the script using bash
     // - "-e": exit immediately if a command exits with a non-zero status
-    // - "-u": treat unset variables as an error when substituting
     // - "-x": print each command before executing it
     // - "-o pipefail": the return value of a pipeline is the status of
     //   the last command to exit with a non-zero status,
     //   or zero if no command exited with a non-zero status
-    return _exec(['/bin/bash', '-exu', '-o', 'pipefail', tmpScriptPath], options);
+    return _exec(['/bin/bash', '-ex', '-o', 'pipefail', tmpScriptPath], options);
 }
+/**
+ * Install a script file with given content if it does not already exist.
+ *
+ * @param script_fullpath The full path to the script file.
+ * @param script_content The content of the script file.
+ * @returns {void}
+ */
+function _installScript(script_fullpath, script_content) {
+    if (external_fs_default().existsSync(script_fullpath)) {
+        core.info(ansi_colors_default().magenta(`Script ${script_fullpath} already exists, skipping installation.`));
+        return;
+    }
+    core.info(ansi_colors_default().blue(`Installing script to ${script_fullpath}...`));
+    // Write the script content to the file and make it executable
+    external_fs_default().writeFileSync(script_fullpath, script_content, { mode: 0o755 });
+}
+
+;// CONCATENATED MODULE: ./src/container.ts
+
+
 /**
  * Make sure the container mentioned is running in the background.
  *
@@ -26022,9 +25970,8 @@ async function _shellExec(script, options = {
  * @param image_name
  * @param image_tag
  */
-async function _ensureContainerRunning(registry, image_name, image_tag, network, container_options = [], container_name = 'wordpress-ci') {
-    const fullImageName = `${registry}/${image_name}:${image_tag}`;
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Ensuring container ${fullImageName} is running...`);
+async function _ensureContainerRunning(image, network, container_options = [], container_name = 'wordpress-ci') {
+    core.debug(`Ensuring container ${image} is running...`);
     // Using docker command, check if the container is running.
     // If not, start the container in detached mode.
     // This is a placeholder implementation.
@@ -26034,25 +25981,29 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
         'ps',
         '--quiet',
         '--filter',
-        `name="${fullImageName}"`
+        `name="${image}"`,
     ]);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`docker ps result: ${stdout}`);
+    core.debug(`docker ps result: ${stdout}`);
     // Run the container in the background
     if (!stdout || stdout.toString().trim() === '') {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Container ${fullImageName} is not running. Starting it...`);
+        core.debug(`Container ${image} is not running. Starting it...`);
         const options = [
             '--detach',
             `--name=${container_name}`,
             '--publish=8080:80',
             `--env="CLEAN_ON_START=yes"`,
             `--network=${network}`,
-            ...container_options
+            ...container_options,
         ];
-        const cmd = ['docker', 'run', ...options, fullImageName];
-        return _exec(cmd);
+        const cmd = ['docker', 'run', ...options, image];
+        return _exec(cmd, {
+            logStdout: true,
+            logStderr: true,
+            showCommand: true,
+        });
     }
     else {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Container ${fullImageName} is already running.`);
+        core.debug(`Container ${image} is already running.`);
         return Promise.resolve({ stdout: '', stderr: '' });
     }
 }
@@ -26066,37 +26017,6 @@ async function _ensureContainerRunning(registry, image_name, image_tag, network,
 async function _ensureContainerStopped(container_name) {
     await _exec(['docker', 'container', 'stop', container_name]);
     return _exec(['docker', 'container', 'rm', container_name]);
-}
-/**
- * Wait for an HTTP server to be available.
- * @param url An URL on the HTTP server that would return some status if server is on.
- * @param timeout The maximum time to wait, in milliseconds.
- * @returns A promise that resolves when the server is available, or rejects on timeout.
- */
-async function _waitForHttpServer(url, timeout) {
-    const startTime = Date.now();
-    const { stdout } = await _exec(['docker', 'ps']);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`docker ps result: ${stdout}`);
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-        try {
-            const result = await _exec([`curl -s -o /dev/null -w "%{http_code}" ${url}`], {
-                logStdout: false,
-                logStderr: false,
-                showCommand: false
-            });
-            if (result.stdout.trim() !== '000') {
-                return;
-            }
-            // Wait for a short interval before retrying
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        catch (error) {
-            if (Date.now() - startTime > timeout) {
-                throw new Error(`Timeout waiting for server at ${url}`);
-            }
-        }
-    }
 }
 /**
  * Generates a bash script that proxies commands to the container.
@@ -26115,107 +26035,285 @@ function _proxiedContainerCommandScript(container_name, container_command_name =
   `;
 }
 /**
- * Install a script file with given content if it does not already exist.
- *
- * @param script_fullpath The full path to the script file.
- * @param script_content The content of the script file.
- * @returns {void}
+ * Wait for an HTTP server to be available.
+ * @param url An URL on the HTTP server that would return some status if server is on.
+ * @param timeout The maximum time to wait, in milliseconds.
+ * @returns A promise that resolves when the server is available, or rejects on timeout.
  */
-function _installScript(script_fullpath, script_content) {
-    if (fs__WEBPACK_IMPORTED_MODULE_3___default().existsSync(script_fullpath)) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().magenta(`Script ${script_fullpath} already exists, skipping installation.`));
-        return;
+async function _waitForHttpServer(url, timeout) {
+    const startTime = Date.now();
+    const { stdout } = await _exec(['docker', 'ps']);
+    core.debug(`docker ps result: ${stdout}`);
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        try {
+            const result = await _exec([`curl -s -o /dev/null -w "%{http_code}" ${url}`], {
+                logStdout: false,
+                logStderr: false,
+                showCommand: false,
+            });
+            if (result.stdout.trim() !== '000') {
+                return;
+            }
+            // Wait for a short interval before retrying
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        catch (error) {
+            if (Date.now() - startTime > timeout) {
+                throw new Error(`Timeout waiting for server at ${url}`);
+            }
+        }
     }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(`Installing script to ${script_fullpath}...`));
-    // Write the script content to the file and make it executable
-    fs__WEBPACK_IMPORTED_MODULE_3___default().writeFileSync(script_fullpath, script_content, { mode: 0o755 });
+}
+/**
+ * Run docker commands to get container information by matching the DNSNames
+ * to the given string.
+ *
+ * @param matchString The string to match in the container's DNS names.
+ * @returns {ContainerNetworkInfo} An object of container information of the container with matching DNS name.
+ * @throws {Error} If no container is found with the matching DNS name.
+ */
+async function _getContainerInfoByDNSName(matchString) {
+    const ids = await _exec(['docker', 'ps', '-q']);
+    const idList = ids.stdout
+        .trim()
+        .split('\n')
+        .filter(id => id.length > 0);
+    const { stdout } = await _exec(['docker', 'inspect', ...idList]);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const containerInfoList = JSON.parse(stdout);
+    const containerInfoListParsed = containerInfoList.map(containerInfo => {
+        return Object.entries(containerInfo.NetworkSettings.Networks).map(([k, v]) => ({
+            NetworkName: k,
+            DNSNames: v.DNSNames,
+            ContainerInfo: containerInfo,
+        }));
+    });
+    for (const containerNetworks of containerInfoListParsed) {
+        for (const containerNetworkInfo of containerNetworks) {
+            for (const dnsName of containerNetworkInfo.DNSNames) {
+                if (dnsName.includes(matchString)) {
+                    return containerNetworkInfo;
+                }
+            }
+        }
+    }
+    throw new Error(`No container found with DNS name matching: ${matchString}`);
+}
+/**
+ * Get the logs of a Docker container.
+ * @param container_name The name of the container to get logs from.
+ * @returns The logs of the container.
+ */
+async function _showContainerLogs(container_name) {
+    return _exec(['docker', 'container', 'logs', container_name], {
+        logStdout: true,
+        logStderr: true,
+        showCommand: true,
+    });
+}
+
+;// CONCATENATED MODULE: ./src/main.ts
+
+
+
+
+
+/**
+ * Get the input values and form a configuration object
+ * to run the action with.
+ *
+ * @returns {Object} The configuration object.
+ * @property {string} image - The image to use.
+ * @property {string} network - The network for the container to use.
+ * @property {string[]} plugins - The list of plugin paths.
+ * @property {string[]} themes - The list of theme paths.
+ * @property {string} db_host - The database host.
+ * @property {string} db_name - The database name.
+ * @property {string} db_user - The database user.
+ * @property {string} db_password - The database password.
+ * @property {string} cleanOnStart - Whether to clean the installation on start.
+ * @property {string} importSql - The path to the SQL file to import.
+ * @property {string} testCommand - The test command to run.
+ * @property {string} testCommandContext - The build context path.
+ */
+function getConfigs() {
+    // Input(s) for getting the Wordpress CI container image
+    const image = core.getInput('image').trim();
+    core.debug(`image: ${image}`);
+    // Input(s) for configuring the Wordpress CI container
+    // before starting it
+    const network = core.getInput('network').trim();
+    core.debug(`network: ${network}`);
+    const pluginsStr = core.getInput('plugins').trim();
+    const plugins = pluginsStr
+        .split('\n')
+        .map(p => p.trim())
+        .filter(p => p);
+    core.debug(`plugins: ${JSON.stringify(plugins)}`);
+    const themesStr = core.getInput('themes').trim();
+    const themes = themesStr
+        .split('\n')
+        .map(t => t.trim())
+        .filter(t => t);
+    core.debug(`themes: ${JSON.stringify(themes)}`);
+    // Input(s) for the installation of Wordpress in the container
+    const dbHost = core.getInput('db-host').trim();
+    core.debug(`db-host: ${dbHost}`);
+    const dbName = core.getInput('db-name').trim();
+    core.debug(`db-name: ${dbName}`);
+    const dbUser = core.getInput('db-user').trim();
+    core.debug(`db-user: ${dbUser}`);
+    const dbPassword = core.getInput('db-password').trim();
+    if (dbPassword === '') {
+        core.debug(`db-password: [EMPTY]`);
+    }
+    else {
+        core.debug(`db-password: [REDACTED]`);
+    }
+    // Input(s) for cleaning the installation on start
+    const cleanOnStartStr = core.getInput('clean-on-start').trim();
+    core.debug(`clean-on-start: ${cleanOnStartStr}`);
+    const cleanOnStart = ['true', 'yes', '1'].includes(cleanOnStartStr.toLowerCase());
+    // Input(s) for importing database dumps
+    const importSql = core.getInput('import-sql').trim();
+    core.debug(`import-sql: ${importSql}`);
+    // Input(s) for running tests
+    const testCommand = core.getInput('test-command').trim();
+    core.debug(`test-command: ${testCommand}`);
+    let testCommandContext = core.getInput('test-command-context').trim();
+    if (testCommandContext === '') {
+        testCommandContext = '.';
+    }
+    core.debug(`test-command-context: ${testCommandContext}`);
+    return {
+        image,
+        network,
+        plugins,
+        dbHost,
+        dbName,
+        dbUser,
+        dbPassword,
+        cleanOnStart,
+        importSql,
+        themes,
+        testCommand,
+        testCommandContext,
+    };
 }
 /**
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, installScript = _installScript, waitForHttpServer = _waitForHttpServer } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, getContainerInfoByDNSName = _getContainerInfoByDNSName, installScript = _installScript, showContainerLogs = _showContainerLogs, waitForHttpServer = _waitForHttpServer, } = {}) {
     const startTime = new Date().getTime();
     let commandOutput = { stdout: '', stderr: '' };
     try {
         const configs = getConfigs();
         const container_options = [
-            `--env="WORDPRESS_DB_HOST=${configs.db_host}"`,
-            `--env="WORDPRESS_DB_NAME=${configs.db_name}"`,
-            `--env="WORDPRESS_DB_USER=${configs.db_user}"`,
-            `--env="WORDPRESS_DB_PASSWORD=${configs.db_password}"`
+            `--env=WORDPRESS_DB_HOST=${configs.dbHost}`,
+            `--env=WORDPRESS_DB_NAME=${configs.dbName}`,
+            `--env=WORDPRESS_DB_USER=${configs.dbUser}`,
+            `--env=WORDPRESS_DB_PASSWORD=${configs.dbPassword}`,
         ];
+        if (configs.cleanOnStart) {
+            container_options.push(`--env=CLEAN_ON_START=yes`);
+        }
         if (configs.plugins.length > 0) {
-            container_options.push(...configs.plugins.map(plugin => `--volume=${plugin}:/var/www/html/wp-content/plugins/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(plugin)}`));
+            container_options.push(...configs.plugins.map(plugin => `--volume=${plugin}:/var/www/html/wp-content/plugins/${(0,external_path_.basename)(plugin)}`));
         }
         if (configs.themes.length > 0) {
-            container_options.push(...configs.themes.map(theme => `--volume=${theme}:/var/www/html/wp-content/themes/${(0,path__WEBPACK_IMPORTED_MODULE_2__.basename)(theme)}`));
+            container_options.push(...configs.themes.map(theme => `--volume=${theme}:/var/www/html/wp-content/themes/${(0,external_path_.basename)(theme)}`));
         }
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Start Wordpress CI container');
+        if (configs.importSql !== '') {
+            container_options.push(`--env=IMPORT_SQL_FILE=/opt/imports/import.sql`, `--volume=${configs.importSql}:/opt/imports/import.sql`);
+        }
+        // Determine the network name to use for the wordpress-ci container
+        let networkName = configs.network;
+        if (networkName === '') {
+            try {
+                core.info('No network specified, will attempt to derive the docker network name from the db hostname.');
+                const containerNetworkInfo = await getContainerInfoByDNSName(configs.dbHost);
+                core.info(`Found container with DNS name ${configs.dbHost} in network ${containerNetworkInfo.NetworkName}.`);
+                networkName = containerNetworkInfo.NetworkName;
+            }
+            catch (error) {
+                core.setFailed(`Error finding container with DNS name ${configs.dbHost}: ${error.message}`);
+                throw error;
+            }
+        }
+        else {
+            core.info(`Using specified network: ${networkName}`);
+        }
+        core.startGroup('Start Wordpress CI container');
         const container_url = `http://localhost:8080`;
         process.env['WORDPRESS_CI_URL'] = container_url;
         try {
-            await ensureContainerRunning(configs.registry, configs.image_name, configs.image_tag, configs.network, container_options);
+            await ensureContainerRunning(configs.image, networkName, container_options);
         }
         catch (error) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error starting container: ${error.message}`);
+            core.setFailed(`Error starting container: ${error.message}`);
             throw error;
         }
         finally {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+            core.endGroup();
         }
         try {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Verify Wordpress CI is up and running');
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
+            core.startGroup('Verify Wordpress CI is up and running...');
+            core.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
             await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
+            core.info('Confirmed Wordpress CI is up and running.');
         }
         catch (error) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
+            // Something must have gone wrong starting the container
+            // Get the logs of the container for debugging
+            core.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
             throw error;
         }
         finally {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+            await showContainerLogs('wordpress-ci');
+            core.endGroup();
         }
         // Install proxy scripts
         const container_name = 'wordpress-ci';
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Setup proxy script to run command in Wordpress CI container');
+        core.startGroup('Setup proxy script to run command in Wordpress CI container');
         installScript('/usr/local/bin/wpci-cmd', _proxiedContainerCommandScript(container_name));
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+        core.endGroup();
         // Download the frontpage on localhost:8080
         try {
             // change to the test command context directory
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Change to Test Command Context Directory');
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Changed directory to ${configs.testCommandContext}`);
+            core.startGroup('Change to Test Command Context Directory');
+            core.info(`Changed directory to ${configs.testCommandContext}`);
             process.chdir(configs.testCommandContext);
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+            core.endGroup();
             // run the test command
             if (configs.testCommand) {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Run Test Command');
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(ansi_colors__WEBPACK_IMPORTED_MODULE_4___default().blue(configs.testCommand));
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+                core.startGroup('Run Test Command');
+                core.info(ansi_colors_default().blue(configs.testCommand));
+                core.endGroup();
                 commandOutput = (await _shellExec(configs.testCommand));
             }
             else {
-                _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('No test command provided, skipping test execution.');
+                core.info('No test command provided, skipping test execution.');
             }
         }
         catch (error) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Error fetching frontpage: ${error.message}`);
+            core.setFailed(`Error fetching frontpage: ${error.message}`);
             throw error;
         }
         finally {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.startGroup('Stop the Wordpress CI container');
+            core.startGroup('Stop the Wordpress CI container');
             await ensureContainerStopped('wordpress-ci');
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.endGroup();
+            core.endGroup();
         }
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stdout', commandOutput.stdout);
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('stderr', commandOutput.stderr);
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('time', new Date().getTime() - startTime);
+        core.setOutput('stdout', commandOutput.stdout);
+        core.setOutput('stderr', commandOutput.stderr);
+        core.setOutput('time', new Date().getTime() - startTime);
     }
     catch (error) {
         // Fail the workflow run if an error occurs
         if (error instanceof Error)
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);
+            core.setFailed(error.message);
     }
 }
 

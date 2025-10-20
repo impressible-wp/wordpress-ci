@@ -74,7 +74,21 @@ module.exports = {
     semi: 'off',
     '@typescript-eslint/semi': ['error', 'never'],
     '@typescript-eslint/type-annotation-spacing': 'error',
-    '@typescript-eslint/unbound-method': 'error'
+    '@typescript-eslint/unbound-method': 'error',
+    'comma-dangle': 'off',
+    '@typescript-eslint/comma-dangle': [
+      'error',
+      {
+        arrays: 'always-multiline',
+        objects: 'always-multiline',
+        imports: 'always-multiline',
+        exports: 'always-multiline',
+        functions: 'always-multiline',
+        enums: 'always-multiline',
+        generics: 'never',
+        tuples: 'always-multiline'
+      }
+    ]
   },
   env: {
     node: true,

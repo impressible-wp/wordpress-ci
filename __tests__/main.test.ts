@@ -1,29 +1,35 @@
-import {run, runEnvironment} from '../src/main'
+import {run, RunEnvironment} from '../src/main'
 import * as core from '@actions/core'
 
 // Mock the action's core module
 jest.mock('@actions/core')
 jest.mock('@actions/github', () => ({
   context: {
-    payload: {}
-  }
+    payload: {},
+  },
 }))
 
 const mockCore = core as jest.Mocked<typeof core>
 
-function mockRunEnvironment(): runEnvironment {
+function mockRunEnvironment(): RunEnvironment {
   const ensureContainerRunning = jest.fn()
   const ensureContainerStopped = jest.fn()
+  const getContainerInfoByDNSName = jest.fn().mockResolvedValue({
+    NetworkName: 'test-network',
+    DNSNames: ['test-dns-name'],
+    ContainerInfo: {},
+  })
+  const showContainerLogs = jest.fn()
   const installScript = jest.fn()
   const waitForHttpServer = jest.fn()
-  const _exec = jest.fn().mockResolvedValue({stdout: 'test output', stderr: ''})
 
   return {
     ensureContainerRunning,
     ensureContainerStopped,
+    getContainerInfoByDNSName,
     installScript,
+    showContainerLogs,
     waitForHttpServer,
-    _exec
   }
 }
 
@@ -36,12 +42,8 @@ describe('action', () => {
     // Set the action's inputs as return values from core.getInput()
     mockCore.getInput.mockImplementation((name: string): string => {
       switch (name) {
-        case 'registry':
-          return 'registry.io'
-        case 'image-name':
-          return 'some-vendor/image-name'
-        case 'image-tag':
-          return 'some-image-tag'
+        case 'image':
+          return 'registry.io/some-vendor/image-name:some-image-tag'
         case 'network':
           return 'some-network'
         case 'plugins':
@@ -56,6 +58,10 @@ describe('action', () => {
           return 'some-db-user'
         case 'db-password':
           return 'some-db-password'
+        case 'clean-on-start':
+          return 'true'
+        case 'import-sql':
+          return './some-db-export.sql'
         case 'test-command':
           return 'test command'
         case 'test-command-context':
@@ -69,11 +75,9 @@ describe('action', () => {
     await run(mockRunEnv)
 
     // Assert the inputs
-    expect(mockCore.debug).toHaveBeenCalledWith('registry: registry.io')
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'image-name: some-vendor/image-name'
+      'image: registry.io/some-vendor/image-name:some-image-tag',
     )
-    expect(mockCore.debug).toHaveBeenCalledWith('image-tag: some-image-tag')
     expect(mockCore.debug).toHaveBeenCalledWith('network: some-network')
 
     expect(mockCore.debug).toHaveBeenCalledWith('db-host: some-db-host')
@@ -81,43 +85,50 @@ describe('action', () => {
     expect(mockCore.debug).toHaveBeenCalledWith('db-user: some-db-user')
     expect(mockCore.debug).toHaveBeenCalledWith('db-password: [REDACTED]')
 
+    expect(mockCore.debug).toHaveBeenCalledWith('clean-on-start: true')
+
     expect(mockCore.debug).toHaveBeenCalledWith(
-      `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`
+      'import-sql: ./some-db-export.sql',
+    )
+
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith(
-      `themes: ${JSON.stringify(['./theme1', './theme2'])}`
+      `themes: ${JSON.stringify(['./theme1', './theme2'])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith('test-command: test command')
     expect(mockCore.debug).toHaveBeenCalledWith(
-      'test-command-context: ./example'
+      'test-command-context: ./example',
     )
 
     // Assert the container running function was called with correct params
     expect(mockRunEnv.ensureContainerRunning).toHaveBeenCalledWith(
-      'registry.io',
-      'some-vendor/image-name',
-      'some-image-tag',
+      'registry.io/some-vendor/image-name:some-image-tag',
       'some-network',
       [
-        '--env="WORDPRESS_DB_HOST=some-db-host"',
-        '--env="WORDPRESS_DB_NAME=some-db-name"',
-        '--env="WORDPRESS_DB_USER=some-db-user"',
-        '--env="WORDPRESS_DB_PASSWORD=some-db-password"',
+        '--env=WORDPRESS_DB_HOST=some-db-host',
+        '--env=WORDPRESS_DB_NAME=some-db-name',
+        '--env=WORDPRESS_DB_USER=some-db-user',
+        '--env=WORDPRESS_DB_PASSWORD=some-db-password',
+        '--env=CLEAN_ON_START=yes',
         '--volume=./plugin1:/var/www/html/wp-content/plugins/plugin1',
         '--volume=./plugin2:/var/www/html/wp-content/plugins/plugin2',
         '--volume=./theme1:/var/www/html/wp-content/themes/theme1',
-        '--volume=./theme2:/var/www/html/wp-content/themes/theme2'
-      ]
+        '--volume=./theme2:/var/www/html/wp-content/themes/theme2',
+        '--env=IMPORT_SQL_FILE=/opt/imports/import.sql',
+        '--volume=./some-db-export.sql:/opt/imports/import.sql',
+      ],
     )
 
     // Assert the outputs
     expect(mockCore.setOutput).toHaveBeenCalledWith(
       'stdout',
-      expect.any(String)
+      expect.any(String),
     )
     expect(mockCore.setOutput).toHaveBeenCalledWith(
       'stderr',
-      expect.any(String)
+      expect.any(String),
     )
     expect(mockCore.setOutput).toHaveBeenCalledWith('time', expect.any(Number))
   })
@@ -143,7 +154,7 @@ describe('action', () => {
 
     // Assert the outputs and debug messages
     expect(mockCore.debug).toHaveBeenCalledWith(
-      `plugins: ${JSON.stringify([])}`
+      `plugins: ${JSON.stringify([])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith(`themes: ${JSON.stringify([])}`)
     expect(mockCore.debug).toHaveBeenCalledWith('test-command-context: .')
