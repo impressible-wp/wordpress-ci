@@ -26128,6 +26128,8 @@ async function _showContainerLogs(container_name) {
  * @property {string} db_name - The database name.
  * @property {string} db_user - The database user.
  * @property {string} db_password - The database password.
+ * @property {string} cleanOnStart - Whether to clean the installation on start.
+ * @property {string} importSql - The path to the SQL file to import.
  * @property {string} testCommand - The test command to run.
  * @property {string} testCommandContext - The build context path.
  */
@@ -26165,6 +26167,10 @@ function getConfigs() {
     else {
         core.debug(`db-password: [REDACTED]`);
     }
+    // Input(s) for cleaning the installation on start
+    const cleanOnStartStr = core.getInput('clean-on-start').trim();
+    core.debug(`clean-on-start: ${cleanOnStartStr}`);
+    const cleanOnStart = ['true', 'yes', '1'].includes(cleanOnStartStr.toLowerCase());
     // Input(s) for importing database dumps
     const importSql = core.getInput('import-sql').trim();
     core.debug(`import-sql: ${importSql}`);
@@ -26184,6 +26190,7 @@ function getConfigs() {
         dbName,
         dbUser,
         dbPassword,
+        cleanOnStart,
         importSql,
         themes,
         testCommand,
@@ -26205,6 +26212,9 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             `--env="WORDPRESS_DB_USER=${configs.dbUser}"`,
             `--env="WORDPRESS_DB_PASSWORD=${configs.dbPassword}"`,
         ];
+        if (configs.cleanOnStart) {
+            container_options.push(`--env="CLEAN_ON_START=yes"`);
+        }
         if (configs.plugins.length > 0) {
             container_options.push(...configs.plugins.map(plugin => `--volume=${plugin}:/var/www/html/wp-content/plugins/${(0,external_path_.basename)(plugin)}`));
         }
