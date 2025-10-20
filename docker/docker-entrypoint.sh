@@ -44,22 +44,24 @@ if [ "$CLEAN_ON_START" != "" ]; then
   wp db clean --yes
 fi
 
-# Check if Wordpress is already installed.
-if wp core is-installed --allow-root --quiet; then
-    echo "Wordpress is already installed, skipping setup."
+# Check if an import SQL file is specified and present.
+if [ "$IMPORT_SQL_FILE" != "" ] && [ -f "$IMPORT_SQL_FILE" ]; then
+  echo "Importing database from SQL file: $IMPORT_SQL_FILE"
+  echo "Will skip unattended installation."
+  wp db import "$IMPORT_SQL_FILE"
+elif wp core is-installed --allow-root --quiet; then
+  # Check if Wordpress is already installed.
+  echo "Wordpress is already installed, skipping setup."
 else
-    # If environment variables are set, use them to configure the database.
-    echo "Wordpress is not installed yet. Using wp-cli to perform unattended installation..."
-    wp core install \
-        --url="http://localhost" \
-        --title="${WORDPRESS_TITLE:-WordpressCI}" \
-        --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
-        --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
-        --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
+  # If environment variables are set, use them to configure the database.
+  echo "Wordpress is not installed yet. Using wp-cli to perform unattended installation..."
+  wp core install \
+    --url="http://localhost" \
+    --title="${WORDPRESS_TITLE:-WordpressCI}" \
+    --admin_user="${WORDPRESS_ADMIN_USER:-user}" \
+    --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
+    --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
 fi
-
-# Configure permalinks to use "Post name" structure.
-wp rewrite structure '/%postname%/'
 
 # Go to the original entrypoint directory
 cd /usr/src/wordpress

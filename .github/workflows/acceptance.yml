@@ -53,6 +53,7 @@ jobs:
           db-password: ${{ env.DB_PASSWORD }}
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
+            wpci-cmd wp rewrite structure '/%postname%/'
             wpci-cmd wp plugin activate myplugin
 
             # Running "client-side" commands in GitHub Actions runner
@@ -72,6 +73,7 @@ jobs:
           themes: ./example/mytheme
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
+            wpci-cmd wp rewrite structure '/%postname%/'
             wpci-cmd wp theme activate mytheme
 
             # Running "client-side" commands in GitHub Actions runner
@@ -92,6 +94,7 @@ jobs:
           themes: ./example/mytheme
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
+            wpci-cmd wp rewrite structure '/%postname%/'
             wpci-cmd wp plugin activate myplugin
             wpci-cmd wp theme activate mytheme
 
