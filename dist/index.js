@@ -26097,6 +26097,14 @@ async function _getContainerInfoByDNSName(matchString) {
     }
     throw new Error(`No container found with DNS name matching: ${matchString}`);
 }
+/**
+ * Get the logs of a Docker container.
+ * @param container_name The name of the container to get logs from.
+ * @returns The logs of the container.
+ */
+async function _getContainerLogs(container_name) {
+    return _exec(['docker', 'container', 'logs', container_name]);
+}
 
 ;// CONCATENATED MODULE: ./src/main.ts
 
@@ -26232,6 +26240,10 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
         }
         catch (error) {
+            // Something must have gone wrong starting the container
+            // Get the logs of the container for debugging
+            const containerLogs = await _getContainerLogs('wordpress-ci');
+            core.warning(`Container logs:\n${containerLogs.stdout}`);
             core.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
             throw error;
         }

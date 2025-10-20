@@ -187,3 +187,14 @@ export async function _getContainerInfoByDNSName(
 
   throw new Error(`No container found with DNS name matching: ${matchString}`)
 }
+
+/**
+ * Get the logs of a Docker container.
+ * @param container_name The name of the container to get logs from.
+ * @returns The logs of the container.
+ */
+export async function _getContainerLogs(
+  container_name: string
+): Promise<{stdout: string; stderr: string}> {
+  return _exec(['docker', 'container', 'logs', container_name])
+}
