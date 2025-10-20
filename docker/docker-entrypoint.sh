@@ -44,9 +44,12 @@ done
 set -e  # Re-enable exit on error
 
 # Check if the database should be clean on start
+echo "Check if need to clean database on start: CLEAN_ON_START='$CLEAN_ON_START'"
 if [ "${CLEAN_ON_START}" != "" ]; then
   echo "Clean the database on start"
   wp db clean --yes
+else
+  echo "Not cleaning the database on start"
 fi
 
 # Check if an import SQL file is specified and present.
