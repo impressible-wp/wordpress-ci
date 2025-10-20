@@ -214,11 +214,12 @@ export async function run({
     }
 
     try {
-      core.startGroup('Verify Wordpress CI is up and running')
+      core.startGroup('Verify Wordpress CI is up and running...')
       core.info(
         `Waiting for Wordpress CI to be available at ${container_url}...`
       )
       await waitForHttpServer(container_url, 10000) // Wait up to 10 seconds
+      core.info('Confirmed Wordpress CI is up and running.')
     } catch (error) {
       // Something must have gone wrong starting the container
       // Get the logs of the container for debugging
