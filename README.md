@@ -2,6 +2,9 @@
 
 A GitHub Action for WordPress plugin or theme continuous integration, testing, and deployment.
 
+Disclaimer: This is a community project. This is NOT, in anyway, affliated to or endorsed by
+[Wordpress.com](Wordpress.com).
+
 ## Usage
 
 Assuming you know how to write automatic browser testing, Wordpress CI will ease your pain in
