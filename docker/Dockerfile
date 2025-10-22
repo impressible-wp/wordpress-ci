@@ -33,7 +33,11 @@ RUN wp core download --allow-root --path=/usr/src/wordpress --version=${WORDPRES
 COPY wp-config-docker.php /usr/src/wordpress/wp-config-docker.php
 
 # Install MySQL client and other dependencies
-RUN apt-get update && apt-get install -y default-mysql-client libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev
+# default-mysql-client: needed for any mysql operation
+# libzip-dev, libpng-dev, libjpeg-dev, libfreetype6-dev: required for gd
+# libonig-dev: required for mbstring
+# less: required for some wp-cli command
+RUN apt-get update && apt-get install -y default-mysql-client libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev less
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions and other dependencies
