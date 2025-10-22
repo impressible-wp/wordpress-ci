@@ -45,7 +45,7 @@ RUN docker-php-ext-install gd mbstring pdo pdo_mysql mysqli zip
 
 # Enable mod_rewrite for Apache and wp-cli
 RUN a2enmod rewrite
-RUN mkdir -p ~/.wp-cli; echo -e "apache_modules:\n  - mod_rewrite" > ~/.wp-cli/config.yml
+RUN mkdir -p ~/.wp-cli; echo "apache_modules:\n  - mod_rewrite" > ~/.wp-cli/config.yml
 
 # Properly label the image
 LABEL org.opencontainers.image.title="Wordpress CI (php${PHP_VERSION})"
