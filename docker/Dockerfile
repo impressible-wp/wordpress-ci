@@ -33,14 +33,19 @@ RUN wp core download --allow-root --path=/usr/src/wordpress --version=${WORDPRES
 COPY wp-config-docker.php /usr/src/wordpress/wp-config-docker.php
 
 # Install MySQL client and other dependencies
-RUN apt-get update && apt-get install -y default-mysql-client libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev
+# default-mysql-client: needed for any mysql operation
+# libzip-dev, libpng-dev, libjpeg-dev, libfreetype6-dev: required for gd
+# libonig-dev: required for mbstring
+# less: required for some wp-cli command
+RUN apt-get update && apt-get install -y default-mysql-client libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev less
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions and other dependencies
 RUN docker-php-ext-install gd mbstring pdo pdo_mysql mysqli zip
 
-# Enable mod_rewrite for Apache
+# Enable mod_rewrite for Apache and wp-cli
 RUN a2enmod rewrite
+RUN mkdir -p ~/.wp-cli; echo -e "apache_modules:\n  - mod_rewrite" > ~/.wp-cli/config.yml
 
 # Properly label the image
 LABEL org.opencontainers.image.title="Wordpress CI (php${PHP_VERSION})"
