@@ -124,3 +124,29 @@ jobs:
               exit 1
             fi
           test-command-context: ./example/import_test
+
+      - name: Test Rewrite and .htaccess support
+        uses: ./
+        with:
+          image: ${{ inputs.image }}
+          plugins: ./example/myplugin
+          db-host: ${{ env.DB_HOST }}
+          db-name: ${{ env.DB_NAME }}
+          db-user: ${{ env.DB_USER }}
+          db-password: ${{ env.DB_PASSWORD }}
+          test-command: |
+            # Running "server-side" commands in the Wordpress CI container
+            wpci-cmd wp rewrite structure '/%postname%/'
+            wpci-cmd wp rewrite flush --hard
+
+            # debug
+            wpci-cmd ls -la /var/www/html
+
+            # Check if .htaccess exists in document root
+            if wpci-cmd test -f /var/www/html/.htaccess; then
+              echo ".htaccess file exists."
+            else
+              echo ".htaccess file is missing."
+              exit 1
+            fi
+          test-command-context: ./example/myplugin
