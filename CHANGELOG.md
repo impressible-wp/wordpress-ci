@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Acceptance test to verify mod_rewrite functionality
+- Custom route testing in example plugin to validate URL rewriting
+- New PHP test script for rewrite setup validation
+
+### Fixed
+- Echo command call in Dockerfile for better Docker build compatibility
+
+## [v1.0.4] - 2025-10-22
+
+### Added
+- Less package installation in Docker container for improved development experience
+- Comprehensive package documentation in Dockerfile
+
+### Changed
+- WP-CLI configuration to enable mod_rewrite support
+- Enhanced .htaccess regeneration with `wp rewrite flush --hard` functionality
+
+### Fixed
+- mod_rewrite configuration to work properly with WP-CLI commands
+
 ## [v1.0.3] - 2025-10-22
 
 ### Changed
@@ -115,7 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic WordPress installation in container
 - Docker Compose configuration for local development
 
-[unreleased]: https://github.com/impressible-wp/wordpress-ci/compare/v1.0.3...HEAD
+[unreleased]: https://github.com/impressible-wp/wordpress-ci/compare/v1.0.4...HEAD
+[v1.0.4]: https://github.com/impressible-wp/wordpress-ci/compare/v1.0.3...v1.0.4
 [v1.0.3]: https://github.com/impressible-wp/wordpress-ci/compare/v1.0.2...v1.0.3
 [v1.0.2]: https://github.com/impressible-wp/wordpress-ci/compare/v1.0.1...v1.0.2
 [v1.0.1]: https://github.com/impressible-wp/wordpress-ci/compare/v1.0.0...v1.0.1
