@@ -39,6 +39,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Install extensions and other dependencies
 RUN docker-php-ext-install gd mbstring pdo pdo_mysql mysqli zip
 
+# Enable mod_rewrite for Apache
+RUN a2enmod rewrite
+
 # Properly label the image
 LABEL org.opencontainers.image.title="Wordpress CI (php${PHP_VERSION})"
 LABEL org.opencontainers.image.authors="Koala Yeung <koala@example.com>"
