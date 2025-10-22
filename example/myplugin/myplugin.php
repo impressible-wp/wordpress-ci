@@ -36,3 +36,35 @@ function my_custom_frontpage_message( $content ) {
 
 // 5. Hook the function into WordPress.
 add_filter( 'the_content', my_custom_frontpage_message(...) );
+
+/**
+ * Add a custom routing rule for the page "/custom-content"
+ *
+ * @return void
+ */
+function myplugin_add_rewrite_rules() {
+    add_rewrite_rule( '^custom-content/?$', 'index.php?myplugin_custom_page=1', 'top' );
+}
+add_action( 'init', myplugin_add_rewrite_rules(...) );
+
+/**
+ * Register the custom query variable "myplugin_custom_page" for routing
+ */
+function myplugin_register_query_vars( $vars ) {
+    $vars[] = 'myplugin_custom_page';
+    return $vars;
+}
+add_filter( 'query_vars', myplugin_register_query_vars(...) );
+
+/**
+ * Load custom template for the custom route
+ */
+function myplugin_load_custom_template( $template ) {
+    if ( get_query_var( 'myplugin_custom_page' ) ) {
+        header( 'Content-Type: application/json' );
+        echo json_encode( array( 'message' => 'Hello from My Plugin!' ) );
+        exit();
+    }
+    return $template;
+}
+add_filter( 'template_include', myplugin_load_custom_template(...) );

@@ -134,9 +134,11 @@ jobs:
           db-name: ${{ env.DB_NAME }}
           db-user: ${{ env.DB_USER }}
           db-password: ${{ env.DB_PASSWORD }}
+          test-command-context: ./example/rewrite_test
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
             wpci-cmd wp rewrite structure '/%postname%/'
+            wpci-cmd wp plugin activate myplugin
             wpci-cmd wp rewrite flush --hard
 
             # debug
@@ -149,4 +151,6 @@ jobs:
               echo ".htaccess file is missing."
               exit 1
             fi
-          test-command-context: ./example/myplugin
+
+            # Running "client-side" commands in GitHub Actions runner
+            php ./test.php
