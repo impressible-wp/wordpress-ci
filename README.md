@@ -13,29 +13,29 @@ setting up CI/CD environment to run your browser testing against different PHP v
 In your project repository, add a Workfow file (e.g. `.github/workflows/acceptance-test.yml`):
 
 ```yaml
-name: Acceptance Test
-runs-on: ubuntu-latest
-env:
-  # The hostname should match the MySQL / MariaDB
-  # service name defined below
-  DB_HOST: mysql
-  DB_NAME: wordpress
-  DB_USER: username
-  DB_PASSWORD: password
-services:
-  mysql:
-    image: mariadb:12
-    env:
-      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
-      MARIADB_DATABASE: ${{ env.DB_NAME }}
-      MARIADB_USER: ${{ env.DB_USER }}
-      MARIADB_PASSWORD: ${{ env.DB_PASSWORD }}
-    ports:
-      - 3306:3306
+name: CI Test
+
+on:
+  pull_request:
+    branches: [main]
+
 jobs:
   test-action:
-    name: Example Action
-    runs-on: ubuntu-latest
+    name: Acceptance Test
+    services:
+      # The default database service name (hostname) for wordpress-ci is "mysql"
+      # You can change it by setting the "db-host" input to the action.
+      mysql:
+        image: mariadb:12
+        env:
+          MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
+          # These are the database credentials used by wordpress-ci
+          MARIADB_DATABASE: wordpress
+          MARIADB_USER: username
+          MARIADB_PASSWORD: password
+        ports:
+          # Simply for easier debug, not needed for wordpress-ci to work
+          - 3306:3306
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -52,20 +52,26 @@ jobs:
       - name: Test
         uses: impressible-wp/wordpress-ci@v1
         with:
-          # Change the plugin and theme path to
-          # the ones that match location in your repository
+          # This folder will be binded to "wordpress-ci" container
+          # /var/www/html/wp-content/plugins/myplugin
           plugins: ./example/myplugin
-          db-host: ${{ env.DB_HOST }}
-          db-name: ${{ env.DB_NAME }}
-          db-user: ${{ env.DB_USER }}
-          db-password: ${{ env.DB_PASSWORD }}
+
+          # Where in your repository do you want to start the test.
+          # Depends on where you test scripts are.
+          test-context: ./example/myplugin
+
           test-command: |
 
             # Running "server-side" commands in the Wordpress CI container
             wpci-cmd wp rewrite structure '/%postname%/'
             wpci-cmd wp plugin activate myplugin
 
-            # Your test may access the Wordpress CI's URL with this environment variable
+            # Some plugin might uses wp_rewrite and need to regenerate
+            # .htaccess to properly work.
+            wpci-cmd wp rewrite flush --hard
+
+            # Your test may access the Wordpress CI's URL with this environment
+            # variable
             echo "Wordpress is accessible here: $WORDPRESS_CI_URL"
 
             # Running "client-side" commands in GitHub Actions runner

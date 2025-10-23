@@ -1,4 +1,4 @@
-name: Acceptance Test
+name: Acceptance Tests
 
 on:
   workflow_call:
@@ -8,25 +8,26 @@ on:
         type: string
         default: ghcr.io/${{ github.repository }}:latest
 
+# For usual triggers:
+#on:
+#  pull_request:
+#    branches: [main]
+
 jobs:
   test-action:
     name: Example Action
     runs-on: ubuntu-latest
-    env:
-      # The hostname should match the MySQL / MariaDB
-      # service name defined below
-      DB_HOST: mysql
-      DB_NAME: wordpress
-      DB_USER: username
-      DB_PASSWORD: password
     services:
+      # The default database service name (hostname) for wordpress-ci is "mysql"
+      # You can change it by setting the "db-host" input to the action.
       mysql:
         image: mariadb:12
         env:
           MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
-          MARIADB_DATABASE: ${{ env.DB_NAME }}
-          MARIADB_USER: ${{ env.DB_USER }}
-          MARIADB_PASSWORD: ${{ env.DB_PASSWORD }}
+          # These are the database credentials used by wordpress-ci
+          MARIADB_DATABASE: wordpress
+          MARIADB_USER: username
+          MARIADB_PASSWORD: password
         ports:
           - 3306:3306
     steps:
@@ -39,18 +40,25 @@ jobs:
       - name: Setup Chrome Driver for webdriver-based testing
         uses: nanasess/setup-chromedriver@v2
 
+      - name: Ensure the Test Output folder exists
+        run: mkdir -p example/tests/_output
+
       - name: Start Chrome Driver process in background
-        run: chromedriver --port=4444 >chromedriver.log 2>&1 &
+        run: chromedriver --port=4444 >example/tests/_output/chromedriver.log 2>&1 &
+
+      # Make a copy of the plugin to be mapped into wordpress-ci container
+      # Leave the original plugin folder intact for other steps
+      - name: Make a copy of the example plugin for test
+        run: |
+          mkdir ./temp
+          cp -Rpdf ./example ./temp/example
 
       - name: Test My Plugin
         uses: ./
         with:
           image: ${{ inputs.image }}
           plugins: ./example/myplugin
-          db-host: ${{ env.DB_HOST }}
-          db-name: ${{ env.DB_NAME }}
-          db-user: ${{ env.DB_USER }}
-          db-password: ${{ env.DB_PASSWORD }}
+          db-host: mysql
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
             wpci-cmd wp rewrite structure '/%postname%/'
@@ -66,10 +74,6 @@ jobs:
         uses: ./
         with:
           image: ${{ inputs.image }}
-          db-host: ${{ env.DB_HOST }}
-          db-name: ${{ env.DB_NAME }}
-          db-user: ${{ env.DB_USER }}
-          db-password: ${{ env.DB_PASSWORD }}
           themes: ./example/mytheme
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
@@ -86,10 +90,6 @@ jobs:
         uses: ./
         with:
           image: ${{ inputs.image }}
-          db-host: ${{ env.DB_HOST }}
-          db-name: ${{ env.DB_NAME }}
-          db-user: ${{ env.DB_USER }}
-          db-password: ${{ env.DB_PASSWORD }}
           plugins: ./example/myplugin
           themes: ./example/mytheme
           test-command: |
@@ -108,10 +108,6 @@ jobs:
         uses: ./
         with:
           image: ${{ inputs.image }}
-          db-host: ${{ env.DB_HOST }}
-          db-name: ${{ env.DB_NAME }}
-          db-user: ${{ env.DB_USER }}
-          db-password: ${{ env.DB_PASSWORD }}
           import-sql: ./example/import_test/dummy.sql
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
@@ -130,10 +126,6 @@ jobs:
         with:
           image: ${{ inputs.image }}
           plugins: ./example/myplugin
-          db-host: ${{ env.DB_HOST }}
-          db-name: ${{ env.DB_NAME }}
-          db-user: ${{ env.DB_USER }}
-          db-password: ${{ env.DB_PASSWORD }}
           test-command-context: ./example/rewrite_test
           test-command: |
             # Running "server-side" commands in the Wordpress CI container
@@ -154,3 +146,10 @@ jobs:
 
             # Running "client-side" commands in GitHub Actions runner
             php ./test.php
+
+      - name: Store Acceptance Test Output if test failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-test-output
+          path: example/tests/_output/
