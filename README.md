@@ -104,6 +104,79 @@ jobs:
           ...
 ```
 
+### Inputs
+
+| Input                  | Required | Default                                      | Description                                                                                                                                                                                             |
+| ---------------------- | -------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `image`                | No       | `ghcr.io/impressible-wp/wordpress-ci:latest` | The Docker container image to use for the WordPress CI environment. For specific PHP versions, use `ghcr.io/impressible-wp/wordpress-ci:php8.1`, `php8.2`, `php8.3`, or `php8.4`                        |
+| `network`              | No       | _(auto-detected)_                            | The Docker network to use. Must match the network of your database container. If empty, the action will automatically detect the network by finding the database container by the hostname in `db-host` |
+| `plugins`              | No       | _(none)_                                     | List of plugin directories to mount into WordPress, one per line. Each directory will be mounted to `/var/www/html/wp-content/plugins/[basename]`                                                       |
+| `themes`               | No       | _(none)_                                     | List of theme directories to mount into WordPress, one per line. Each directory will be mounted to `/var/www/html/wp-content/themes/[basename]`                                                         |
+| `db-host`              | No       | `mysql`                                      | The hostname of the MySQL/MariaDB service container. Should match your GitHub Actions service name                                                                                                      |
+| `db-name`              | No       | `wordpress`                                  | The name of the database to use for WordPress installation                                                                                                                                              |
+| `db-user`              | No       | `username`                                   | The database user to connect as                                                                                                                                                                         |
+| `db-password`          | No       | `password`                                   | The password for the database user                                                                                                                                                                      |
+| `clean-on-start`       | No       | `true`                                       | Whether to clean the WordPress installation on start. Accepts `true`, `yes`, `1` for true; any other value for false                                                                                    |
+| `import-sql`           | No       | _(none)_                                     | Path to an SQL file to import into the database. **Note:** This will skip the unattended WordPress installation                                                                                         |
+| `test-command`         | **Yes**  | `echo "No test command specified"`           | Command(s) to execute for testing. Can be multi-line. Use `wpci-cmd` prefix to run commands inside the WordPress container                                                                              |
+| `test-command-context` | No       | `.`                                          | Directory to run the test command in, relative to your repository root                                                                                                                                  |
+
+#### Usage Examples
+
+**Plugin Testing:**
+
+```yaml
+with:
+  plugins: |
+    ./my-plugin
+    ./another-plugin
+  test-command: |
+    wpci-cmd wp plugin activate my-plugin
+    composer install
+    composer run test
+```
+
+**Theme Testing:**
+
+```yaml
+with:
+  themes: ./my-theme
+  test-command: |
+    wpci-cmd wp theme activate my-theme
+    npm install
+    npm run test
+```
+
+**Custom Database Setup:**
+
+```yaml
+services:
+  database:
+    image: mysql:8.0
+    env:
+      MYSQL_DATABASE: my_wp_db
+      MYSQL_USER: wp_user
+      MYSQL_PASSWORD: wp_password
+      MYSQL_ROOT_PASSWORD: root_password
+
+with:
+  db-host: database
+  db-name: my_wp_db
+  db-user: wp_user
+  db-password: wp_password
+```
+
+**SQL Import:**
+
+```yaml
+with:
+  import-sql: ./tests/fixtures/sample-data.sql
+  clean-on-start: false
+  test-command: |
+    wpci-cmd wp user list
+    composer run test
+```
+
 ## Docker Container
 
 This repository includes [config file](docker/Dockerfile) to build the environment for
