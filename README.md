@@ -79,6 +79,31 @@ jobs:
             composer run test
 ```
 
+### Matrix testing
+
+Wordpress CI default builds for PHP version 8.1+. Each has its own different image
+ready to be pull from.
+
+```yaml
+jobs:
+  build:
+    name: PHP ${{ matrix.php-version }} Ttest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v5
+
+        ...
+
+      - name: Test
+        uses: impressible-wp/wordpress-ci@v1
+        with:
+          image: ghcr.io/impressible-wp/wordpress-ci:php${{ matrix.php-version }}
+          ...
+```
+
 ## Docker Container
 
 This repository includes [config file](docker/Dockerfile) to build the environment for
