@@ -1,14 +1,14 @@
-name: 'Wordpress CI'
-description: 'Wordpress Plugin or Theme CI environment'
+name: 'WordPress CI'
+description: 'WordPress Plugin or Theme CI environment'
 author: 'Impressible'
 inputs:
-  # Input(s) for getting the Wordpress CI container image
+  # Input(s) for getting the WordPress CI container image
   image:
     description: 'The container image to use'
     required: false
     default: 'ghcr.io/impressible-wp/wordpress-ci:latest'
 
-  # Input(s) for configuring the Wordpress CI container
+  # Input(s) for configuring the WordPress CI container
   # before starting it
   network:
     description: 'The Docker network to use. Must match that of the database container.'
@@ -23,7 +23,7 @@ inputs:
     required: false
     default: ''
 
-  # Input(s) for the installation of Wordpress in the container
+  # Input(s) for the installation of WordPress in the container
   db-host:
     description: 'The hostname of the MySQL/MariaDB service container'
     required: false
@@ -43,13 +43,13 @@ inputs:
 
   # Input to control whether to clean the installation on start
   clean-on-start:
-    description: 'Whether to clean the Wordpress installation on start'
+    description: 'Whether to clean the WordPress installation on start'
     required: false
     default: 'true'
 
   # Input(s) for importing database dumps
   import-sql:
-    description: 'Path to an SQL file to import into the database. Please note that setting this would negate the unattained installation of Wordpress.'
+    description: 'Path to an SQL file to import into the database. Please note that setting this would negate the unattained installation of WordPress.'
     required: false
     default: ''
 

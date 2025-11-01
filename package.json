@@ -1,7 +1,7 @@
 {
   "name": "wordpress-ci",
   "version": "1.0.0",
-  "description": "A GitHub Action for doing integration test and acceptance test with Wordpress",
+  "description": "A GitHub Action for doing integration test and acceptance test with WordPress",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

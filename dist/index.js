@@ -26138,10 +26138,10 @@ async function _showContainerLogs(container_name) {
  * @property {string} testCommandContext - The build context path.
  */
 function getConfigs() {
-    // Input(s) for getting the Wordpress CI container image
+    // Input(s) for getting the WordPress CI container image
     const image = core.getInput('image').trim();
     core.debug(`image: ${image}`);
-    // Input(s) for configuring the Wordpress CI container
+    // Input(s) for configuring the WordPress CI container
     // before starting it
     const network = core.getInput('network').trim();
     core.debug(`network: ${network}`);
@@ -26157,7 +26157,7 @@ function getConfigs() {
         .map(t => t.trim())
         .filter(t => t);
     core.debug(`themes: ${JSON.stringify(themes)}`);
-    // Input(s) for the installation of Wordpress in the container
+    // Input(s) for the installation of WordPress in the container
     const dbHost = core.getInput('db-host').trim();
     core.debug(`db-host: ${dbHost}`);
     const dbName = core.getInput('db-name').trim();
@@ -26245,7 +26245,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         else {
             core.info(`Using specified network: ${networkName}`);
         }
-        core.startGroup('Start Wordpress CI container');
+        core.startGroup('Start WordPress CI container');
         const container_url = `http://localhost:8080`;
         process.env['WORDPRESS_CI_URL'] = container_url;
         try {
@@ -26260,16 +26260,16 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         }
         let confirmedUp = false;
         try {
-            core.startGroup('Verify Wordpress CI is up and running...');
-            core.info(`Waiting for Wordpress CI to be available at ${container_url}...`);
+            core.startGroup('Verify WordPress CI is up and running...');
+            core.info(`Waiting for WordPress CI to be available at ${container_url}...`);
             await waitForHttpServer(container_url, 10000); // Wait up to 10 seconds
-            core.info('Confirmed Wordpress CI is up and running.');
+            core.info('Confirmed WordPress CI is up and running.');
             confirmedUp = true;
         }
         catch (error) {
             // Something must have gone wrong starting the container
             // Get the logs of the container for debugging
-            core.setFailed(`Error waiting for Wordpress CI to be available: ${error.message}`);
+            core.setFailed(`Error waiting for WordPress CI to be available: ${error.message}`);
             throw error;
         }
         finally {
@@ -26280,7 +26280,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         }
         // Install proxy scripts
         const container_name = 'wordpress-ci';
-        core.startGroup('Setup proxy script to run command in Wordpress CI container');
+        core.startGroup('Setup proxy script to run command in WordPress CI container');
         installScript('/usr/local/bin/wpci-cmd', _proxiedContainerCommandScript(container_name));
         core.endGroup();
         // Run the test command
@@ -26306,7 +26306,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             throw error;
         }
         finally {
-            core.startGroup('Stop the Wordpress CI container');
+            core.startGroup('Stop the WordPress CI container');
             await ensureContainerStopped('wordpress-ci');
             core.endGroup();
         }

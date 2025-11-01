@@ -3,11 +3,11 @@
 A GitHub Action for WordPress plugin or theme continuous integration, testing, and deployment.
 
 Disclaimer: This is a community project. This is NOT, in anyway, affliated to or endorsed by
-[Wordpress.com](Wordpress.com).
+[WordPress.com](https://wordpress.com).
 
 ## Usage
 
-Assuming you know how to write automatic browser testing, Wordpress CI will ease your pain in
+Assuming you know how to write automatic browser testing, WordPress CI will ease your pain in
 setting up CI/CD environment to run your browser testing against different PHP versions.
 
 In your project repository, add a Workfow file (e.g. `.github/workflows/acceptance-test.yml`):
@@ -62,7 +62,7 @@ jobs:
 
           test-command: |
 
-            # Running "server-side" commands in the Wordpress CI container
+            # Running "server-side" commands in the WordPress CI container
             wpci-cmd wp rewrite structure '/%postname%/'
             wpci-cmd wp plugin activate myplugin
 
@@ -70,9 +70,9 @@ jobs:
             # .htaccess to properly work.
             wpci-cmd wp rewrite flush --hard
 
-            # Your test may access the Wordpress CI's URL with this environment
+            # Your test may access the WordPress CI's URL with this environment
             # variable
-            echo "Wordpress is accessible here: $WORDPRESS_CI_URL"
+            echo "WordPress is accessible here: $WORDPRESS_CI_URL"
 
             # Running "client-side" commands in GitHub Actions runner
             composer install
@@ -81,7 +81,7 @@ jobs:
 
 ### Matrix testing
 
-Wordpress CI default builds for PHP version 8.1+. Each has its own different image
+WordPress CI default builds for PHP version 8.1+. Each has its own different image
 ready to be pull from.
 
 ```yaml

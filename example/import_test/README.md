@@ -7,9 +7,9 @@ This folder shows how to use `import-sql` input to do so.
 
 ## Key Concepts
 
-- Acceptance test are run against the Wordpress installation in the Wordpress CI container.
+- Acceptance test are run against the WordPress installation in the WordPress CI container.
   Not the current folder.
-- The plugins and themes are mapped into the Wordpress CI container.
+- The plugins and themes are mapped into the WordPress CI container.
 - Conceptually, they do not need to be in the same folder or even the same GitHub project.
 
 ## GitHub Action Example
@@ -70,23 +70,23 @@ jobs:
           # Actual test
           test-command: |
 
-            # Running "server-side" commands in the Wordpress CI container
+            # Running "server-side" commands in the WordPress CI container
             wpci-cmd wp rewrite structure '/%postname%/'
             wpci-cmd wp plugin activate myplugin
 
-            # Your test may access the Wordpress CI's URL with this environment variable
-            echo "Wordpress is accessible here: $WORDPRESS_CI_URL"
+            # Your test may access the WordPress CI's URL with this environment variable
+            echo "WordPress is accessible here: $WORDPRESS_CI_URL"
 
             # Running "client-side" commands in GitHub Actions runner
             composer install
             composer run test
 ```
 
-## Credentails for the Wordpress Admin User
+## Credentails for the WordPress Admin User
 
-With `import-sql` setup propertly, the Wordpress CI container will no longer run the
+With `import-sql` setup propertly, the WordPress CI container will no longer run the
 unattended installation steps. And the default username and password of the installed
-Wordpress might be different (depends on your SQL dump content).
+WordPress might be different (depends on your SQL dump content).
 
 See: [docker-entrypoint.sh](../../docker/docker-entrypoint.sh)
 

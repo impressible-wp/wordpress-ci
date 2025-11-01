@@ -1,6 +1,6 @@
 # WordPress CI's Container Image
 
-This folder includes [config file](Dockerfile) to build a standardized Wordpress environment
+This folder includes [config file](Dockerfile) to build a standardized WordPress environment
 for CI testing.
 
 ## Usage
@@ -16,7 +16,7 @@ you must provide a valid host, user and password with environment variables:
 
 And then you may start the container.
 
-The container will start an Apache server that runs a copy of Wordpress installed here:
+The container will start an Apache server that runs a copy of WordPress installed here:
 
 - `/var/www/html`
 
@@ -29,10 +29,10 @@ test.
 
 ## Software Installed
 
-Besides the Wordpress source code, the docker image pre-installed the below CLI tools for the ease
+Besides the WordPress source code, the docker image pre-installed the below CLI tools for the ease
 of development.
 
-- [wp](https://wp-cli.org/): Wordpress's wp-cli.
+- [wp](https://wp-cli.org/): WordPress's wp-cli.
 - [composer](https://getcomposer.org): Composer package manager.
 
 ## Environment Variables
@@ -41,7 +41,7 @@ When run, docker container allow user to [inject environment variables](https://
 
 Other than the variables supported by the default [PHP image](https://hub.docker.com/_/php),
 the docker build from this [Dockerfile](Dockerfile) support a few variables for configuring the
-unattained Wordpress installation:
+unattained WordPress installation:
 
 ### For Database Connection
 
@@ -54,9 +54,9 @@ unattained Wordpress installation:
 
 (See: [wp-config-docker.php](wp-config-docker.php))
 
-### For Unattended Wordpress Setup
+### For Unattended WordPress Setup
 
-- `WORDPRESS_TITLE`: The site title (default: "WordpressCI").
+- `WORDPRESS_TITLE`: The site title (default: "WordPressCI").
 - `WORDPRESS_ADMIN_USER`: The admin user's username (default: "admin").
 - `WORDPRESS_ADMIN_PASSWORD`: The admin user password (default: "password").
 - `WORDPRESS_ADMIN_EMAIL`: The admin user's email address (default: "user@example.com").

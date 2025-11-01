@@ -1,13 +1,13 @@
 # Combined Test Example
 
-This folder only run acceptance test against Wordpress CI environment that mapped "myplugin"
+This folder only run acceptance test against WordPress CI environment that mapped "myplugin"
 and "mytheme" to it.
 
 ## Key Concepts
 
-- Acceptance test are run against the Wordpress installation in the Wordpress CI container.
+- Acceptance test are run against the WordPress installation in the WordPress CI container.
   Not the current folder.
-- The plugins and themes are mapped into the Wordpress CI container.
+- The plugins and themes are mapped into the WordPress CI container.
 - Conceptually, they do not need to be in the same folder or even the same GitHub project.
 
 ## GitHub Action Example
@@ -74,7 +74,7 @@ jobs:
           db-password: ${{ env.DB_PASSWORD }}
           test-command: |
 
-            # Running "server-side" commands in the Wordpress CI container
+            # Running "server-side" commands in the WordPress CI container
             wpci-cmd wp rewrite structure '/%postname%/'
             wpci-cmd wp plugin activate myplugin1 myplugin2
             wpci-cmd wp theme activate mychildtheme
@@ -83,17 +83,17 @@ jobs:
             wpci-cmd wp install polylang
             wpci-cmd wp activate polylang
 
-            # Your test may access the Wordpress CI's URL with this environment variable
-            echo "Wordpress is accessible here: $WORDPRESS_CI_URL"
+            # Your test may access the WordPress CI's URL with this environment variable
+            echo "WordPress is accessible here: $WORDPRESS_CI_URL"
 
             # Running "client-side" commands in GitHub Actions runner
             composer install
             composer run test
 ```
 
-## Credentails for the Wordpress Admin User
+## Credentails for the WordPress Admin User
 
-By default, Wordpress CI container will do an unattended installation of the wordpress with
+By default, WordPress CI container will do an unattended installation of the wordpress with
 one admin account:
 
 - Username: admin

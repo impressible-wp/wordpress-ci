@@ -44,11 +44,11 @@ function getConfigs(): {
   testCommand: string
   testCommandContext: string
 } {
-  // Input(s) for getting the Wordpress CI container image
+  // Input(s) for getting the WordPress CI container image
   const image = core.getInput('image').trim()
   core.debug(`image: ${image}`)
 
-  // Input(s) for configuring the Wordpress CI container
+  // Input(s) for configuring the WordPress CI container
   // before starting it
   const network = core.getInput('network').trim()
   core.debug(`network: ${network}`)
@@ -67,7 +67,7 @@ function getConfigs(): {
     .filter(t => t)
   core.debug(`themes: ${JSON.stringify(themes)}`)
 
-  // Input(s) for the installation of Wordpress in the container
+  // Input(s) for the installation of WordPress in the container
   const dbHost = core.getInput('db-host').trim()
   core.debug(`db-host: ${dbHost}`)
   const dbName = core.getInput('db-name').trim()
@@ -219,7 +219,7 @@ export async function run({
       core.info(`Using specified network: ${networkName}`)
     }
 
-    core.startGroup('Start Wordpress CI container')
+    core.startGroup('Start WordPress CI container')
     const container_url = `http://localhost:8080`
     process.env['WORDPRESS_CI_URL'] = container_url
     try {
@@ -237,18 +237,18 @@ export async function run({
 
     let confirmedUp = false
     try {
-      core.startGroup('Verify Wordpress CI is up and running...')
+      core.startGroup('Verify WordPress CI is up and running...')
       core.info(
-        `Waiting for Wordpress CI to be available at ${container_url}...`,
+        `Waiting for WordPress CI to be available at ${container_url}...`,
       )
       await waitForHttpServer(container_url, 10000) // Wait up to 10 seconds
-      core.info('Confirmed Wordpress CI is up and running.')
+      core.info('Confirmed WordPress CI is up and running.')
       confirmedUp = true
     } catch (error) {
       // Something must have gone wrong starting the container
       // Get the logs of the container for debugging
       core.setFailed(
-        `Error waiting for Wordpress CI to be available: ${(error as Error).message}`,
+        `Error waiting for WordPress CI to be available: ${(error as Error).message}`,
       )
       throw error
     } finally {
@@ -261,7 +261,7 @@ export async function run({
     // Install proxy scripts
     const container_name = 'wordpress-ci'
     core.startGroup(
-      'Setup proxy script to run command in Wordpress CI container',
+      'Setup proxy script to run command in WordPress CI container',
     )
     installScript(
       '/usr/local/bin/wpci-cmd',
@@ -294,7 +294,7 @@ export async function run({
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
     } finally {
-      core.startGroup('Stop the Wordpress CI container')
+      core.startGroup('Stop the WordPress CI container')
       await ensureContainerStopped('wordpress-ci')
       core.endGroup()
     }

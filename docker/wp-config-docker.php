@@ -1,6 +1,6 @@
 <?php
 /**
- * Docker-specific wp-config.php from Docker's official Wordpress image project
+ * Docker-specific wp-config.php from Docker's official WordPress image project
  * with minor modifications to work better in this context.
  *
  * @link https://raw.githubusercontent.com/docker-library/wordpress/refs/heads/master/wp-config-docker.php
