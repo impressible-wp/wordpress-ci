@@ -12,6 +12,10 @@ WORKDIR /var/www/html/wp-content
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Copy the fair.pm installation script
+COPY fairpm-setup.php /usr/local/bin
+RUN chmod +x /usr/local/bin/fairpm-setup.php
+
 # Set php.ini settings
 COPY php.ini /usr/local/etc/php/conf.d/custom.ini
 
