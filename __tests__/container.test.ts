@@ -3,7 +3,7 @@ import * as system from '../src/system'
 
 // Mock the system module
 jest.mock('../src/system', () => ({
-  _exec: jest.fn()
+  _exec: jest.fn(),
 }))
 
 const mockExec = system._exec as jest.MockedFunction<typeof system._exec>
@@ -18,7 +18,7 @@ describe('container module', () => {
       // Mock docker ps -q response
       mockExec.mockResolvedValueOnce({
         stdout: 'container1\ncontainer2\n',
-        stderr: ''
+        stderr: '',
       })
 
       // Mock docker inspect response
@@ -28,29 +28,29 @@ describe('container module', () => {
           NetworkSettings: {
             Networks: {
               bridge: {
-                DNSNames: ['app.docker.local', 'webapp']
+                DNSNames: ['app.docker.local', 'webapp'],
               },
               'custom-network': {
-                DNSNames: ['app.custom.local']
-              }
-            }
-          }
+                DNSNames: ['app.custom.local'],
+              },
+            },
+          },
         },
         {
           Id: 'container2',
           NetworkSettings: {
             Networks: {
               bridge: {
-                DNSNames: ['db.docker.local', 'database']
-              }
-            }
-          }
-        }
+                DNSNames: ['db.docker.local', 'database'],
+              },
+            },
+          },
+        },
       ]
 
       mockExec.mockResolvedValueOnce({
         stdout: JSON.stringify(mockContainerInfo),
-        stderr: ''
+        stderr: '',
       })
 
       const result = await _getContainerInfoByDNSName('webapp')
@@ -58,7 +58,7 @@ describe('container module', () => {
       expect(result).toEqual({
         NetworkName: 'bridge',
         DNSNames: ['app.docker.local', 'webapp'],
-        ContainerInfo: mockContainerInfo[0]
+        ContainerInfo: mockContainerInfo[0],
       })
 
       // Verify the correct docker commands were called
@@ -68,7 +68,7 @@ describe('container module', () => {
         'docker',
         'inspect',
         'container1',
-        'container2'
+        'container2',
       ])
     })
 
@@ -76,7 +76,7 @@ describe('container module', () => {
       // Mock docker ps -q response
       mockExec.mockResolvedValueOnce({
         stdout: 'container1\n',
-        stderr: ''
+        stderr: '',
       })
 
       // Mock docker inspect response
@@ -86,16 +86,16 @@ describe('container module', () => {
           NetworkSettings: {
             Networks: {
               'custom-network': {
-                DNSNames: ['my-app.custom.docker.local', 'api-service']
-              }
-            }
-          }
-        }
+                DNSNames: ['my-app.custom.docker.local', 'api-service'],
+              },
+            },
+          },
+        },
       ]
 
       mockExec.mockResolvedValueOnce({
         stdout: JSON.stringify(mockContainerInfo),
-        stderr: ''
+        stderr: '',
       })
 
       const result = await _getContainerInfoByDNSName('custom.docker')
@@ -103,7 +103,7 @@ describe('container module', () => {
       expect(result).toEqual({
         NetworkName: 'custom-network',
         DNSNames: ['my-app.custom.docker.local', 'api-service'],
-        ContainerInfo: mockContainerInfo[0]
+        ContainerInfo: mockContainerInfo[0],
       })
     })
 
@@ -111,7 +111,7 @@ describe('container module', () => {
       // Mock docker ps -q response
       mockExec.mockResolvedValueOnce({
         stdout: 'container1\n',
-        stderr: ''
+        stderr: '',
       })
 
       // Mock docker inspect response
@@ -121,20 +121,20 @@ describe('container module', () => {
           NetworkSettings: {
             Networks: {
               bridge: {
-                DNSNames: ['different-app.docker.local', 'other-service']
-              }
-            }
-          }
-        }
+                DNSNames: ['different-app.docker.local', 'other-service'],
+              },
+            },
+          },
+        },
       ]
 
       mockExec.mockResolvedValueOnce({
         stdout: JSON.stringify(mockContainerInfo),
-        stderr: ''
+        stderr: '',
       })
 
       await expect(_getContainerInfoByDNSName('nonexistent')).rejects.toThrow(
-        'No container found with DNS name matching: nonexistent'
+        'No container found with DNS name matching: nonexistent',
       )
     })
 
@@ -142,17 +142,17 @@ describe('container module', () => {
       // Mock docker ps -q response with no containers
       mockExec.mockResolvedValueOnce({
         stdout: '',
-        stderr: ''
+        stderr: '',
       })
 
       // Mock docker inspect response with empty array
       mockExec.mockResolvedValueOnce({
         stdout: '[]',
-        stderr: ''
+        stderr: '',
       })
 
       await expect(_getContainerInfoByDNSName('any-name')).rejects.toThrow(
-        'No container found with DNS name matching: any-name'
+        'No container found with DNS name matching: any-name',
       )
 
       // Should still call docker inspect even with no containers
@@ -164,7 +164,7 @@ describe('container module', () => {
       // Mock docker ps -q response
       mockExec.mockResolvedValueOnce({
         stdout: 'multi-network-container\n',
-        stderr: ''
+        stderr: '',
       })
 
       // Mock docker inspect response
@@ -174,22 +174,22 @@ describe('container module', () => {
           NetworkSettings: {
             Networks: {
               network1: {
-                DNSNames: ['service1.net1.local']
+                DNSNames: ['service1.net1.local'],
               },
               network2: {
-                DNSNames: ['service1.net2.local', 'target-service']
+                DNSNames: ['service1.net2.local', 'target-service'],
               },
               network3: {
-                DNSNames: ['service1.net3.local']
-              }
-            }
-          }
-        }
+                DNSNames: ['service1.net3.local'],
+              },
+            },
+          },
+        },
       ]
 
       mockExec.mockResolvedValueOnce({
         stdout: JSON.stringify(mockContainerInfo),
-        stderr: ''
+        stderr: '',
       })
 
       const result = await _getContainerInfoByDNSName('target-service')
@@ -197,7 +197,7 @@ describe('container module', () => {
       expect(result).toEqual({
         NetworkName: 'network2',
         DNSNames: ['service1.net2.local', 'target-service'],
-        ContainerInfo: mockContainerInfo[0]
+        ContainerInfo: mockContainerInfo[0],
       })
     })
 
@@ -205,7 +205,7 @@ describe('container module', () => {
       // Mock docker ps -q response
       mockExec.mockResolvedValueOnce({
         stdout: 'container1\ncontainer2\n',
-        stderr: ''
+        stderr: '',
       })
 
       // Mock docker inspect response
@@ -215,26 +215,26 @@ describe('container module', () => {
           NetworkSettings: {
             Networks: {
               bridge: {
-                DNSNames: []
-              }
-            }
-          }
+                DNSNames: [],
+              },
+            },
+          },
         },
         {
           Id: 'container2',
           NetworkSettings: {
             Networks: {
               bridge: {
-                DNSNames: ['found-service']
-              }
-            }
-          }
-        }
+                DNSNames: ['found-service'],
+              },
+            },
+          },
+        },
       ]
 
       mockExec.mockResolvedValueOnce({
         stdout: JSON.stringify(mockContainerInfo),
-        stderr: ''
+        stderr: '',
       })
 
       const result = await _getContainerInfoByDNSName('found-service')
@@ -242,7 +242,7 @@ describe('container module', () => {
       expect(result).toEqual({
         NetworkName: 'bridge',
         DNSNames: ['found-service'],
-        ContainerInfo: mockContainerInfo[1]
+        ContainerInfo: mockContainerInfo[1],
       })
     })
   })
