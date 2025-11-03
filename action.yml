@@ -18,10 +18,18 @@ inputs:
     description: 'List of directories of plugins to test, one per line'
     required: false
     default: ''
+  plugins-copied:
+    description: 'Should the plugins be copied to the WordPress wp-contents folder (on start) instead of volume mounting?'
+    required: false
+    default: 'true'
   themes:
     description: 'List of directories of themes to test, one per line'
     required: false
     default: ''
+  themes-copied:
+    description: 'Should the themes be copied to the WordPress wp-contents folder (on start) instead of volume mounting?'
+    required: false
+    default: 'true'
 
   # Input(s) for the installation of WordPress in the container
   db-host:

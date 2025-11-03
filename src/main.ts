@@ -38,7 +38,9 @@ function getConfigs(): {
   dbPassword: string
   network: string
   plugins: string[]
+  pluginsCopied: boolean
   themes: string[]
+  themesCopied: boolean
   cleanOnStart: boolean
   importSql: string
   testCommand: string
@@ -60,12 +62,24 @@ function getConfigs(): {
     .filter(p => p)
   core.debug(`plugins: ${JSON.stringify(plugins)}`)
 
+  const pluginsCopiedStr = core.getInput('copy-plugins').trim()
+  const pluginsCopied = ['true', 'yes', '1'].includes(
+    pluginsCopiedStr.toLowerCase(),
+  )
+  core.debug(`plugins-copied: ${pluginsCopied}`)
+
   const themesStr = core.getInput('themes').trim()
   const themes = themesStr
     .split('\n')
     .map(t => t.trim())
     .filter(t => t)
   core.debug(`themes: ${JSON.stringify(themes)}`)
+
+  const themesCopiedStr = core.getInput('copy-themes').trim()
+  const themesCopied = ['true', 'yes', '1'].includes(
+    themesCopiedStr.toLowerCase(),
+  )
+  core.debug(`themes-copied: ${themesCopied}`)
 
   // Input(s) for the installation of WordPress in the container
   const dbHost = core.getInput('db-host').trim()
@@ -106,13 +120,15 @@ function getConfigs(): {
     image,
     network,
     plugins,
+    pluginsCopied,
+    themes,
+    themesCopied,
     dbHost,
     dbName,
     dbUser,
     dbPassword,
     cleanOnStart,
     importSql,
-    themes,
     testCommand,
     testCommandContext,
   }
@@ -174,22 +190,28 @@ export async function run({
       container_options.push(
         ...configs.plugins.map(
           plugin =>
-            `--volume=${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}`,
+            `--volume=${plugin}:/usr/src/wordpress-ci/plugins/${basename(plugin)}`,
         ),
       )
+    }
+    if (configs.pluginsCopied) {
+      container_options.push('--env=COPY_PLUGINS=yes')
     }
     if (configs.themes.length > 0) {
       container_options.push(
         ...configs.themes.map(
           theme =>
-            `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`,
+            `--volume=${theme}:/usr/src/wordpress-ci/themes/${basename(theme)}`,
         ),
       )
     }
+    if (configs.themesCopied) {
+      container_options.push('--env=COPY_THEMES=yes')
+    }
     if (configs.importSql !== '') {
       container_options.push(
-        `--env=IMPORT_SQL_FILE=/opt/imports/import.sql`,
-        `--volume=${configs.importSql}:/opt/imports/import.sql`,
+        `--env=IMPORT_SQL_FILE=/usr/src/wordpress-ci/import/import.sql`,
+        `--volume=${configs.importSql}:/usr/src/wordpress-ci/import/import.sql`,
       )
     }
 

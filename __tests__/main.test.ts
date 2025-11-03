@@ -112,12 +112,12 @@ describe('action', () => {
         '--env=WORDPRESS_DB_USER=some-db-user',
         '--env=WORDPRESS_DB_PASSWORD=some-db-password',
         '--env=CLEAN_ON_START=yes',
-        '--volume=./plugin1:/var/www/html/wp-content/plugins/plugin1',
-        '--volume=./plugin2:/var/www/html/wp-content/plugins/plugin2',
-        '--volume=./theme1:/var/www/html/wp-content/themes/theme1',
-        '--volume=./theme2:/var/www/html/wp-content/themes/theme2',
-        '--env=IMPORT_SQL_FILE=/opt/imports/import.sql',
-        '--volume=./some-db-export.sql:/opt/imports/import.sql',
+        '--volume=./plugin1:/usr/src/wordpress-ci/plugins/plugin1',
+        '--volume=./plugin2:/usr/src/wordpress-ci/plugins/plugin2',
+        '--volume=./theme1:/usr/src/wordpress-ci/themes/theme1',
+        '--volume=./theme2:/usr/src/wordpress-ci/themes/theme2',
+        '--env=IMPORT_SQL_FILE=/usr/src/wordpress-ci/import/import.sql',
+        '--volume=./some-db-export.sql:/usr/src/wordpress-ci/import/import.sql',
       ],
     )
 

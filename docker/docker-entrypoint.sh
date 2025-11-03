@@ -77,6 +77,40 @@ else
     --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
 fi
 
+# Check if the plugins should be copied or symlinked
+if [ "$PLUGINS_COPIED" != "" ]; then
+  echo "Copying plugins to the WordPress installation..."
+  for plugin_path in /usr/src/wordpress-ci/plugins/*; do
+    plugin_name=$(basename "$plugin_path")
+    echo "Copying plugin: $plugin_name"
+    cp -Rpdf "$plugin_path" "/var/www/html/wp-content/plugins/$plugin_name"
+  done
+else
+  echo "Symlinking plugins to the WordPress installation..."
+  for plugin_path in /usr/src/wordpress-ci/plugins/*; do
+    plugin_name=$(basename "$plugin_path")
+    echo "Symlinking plugin: $plugin_name"
+    ln -s "$plugin_path" "/var/www/html/wp-content/plugins/$plugin_name"
+  done
+fi
+
+# Check if the themes should be copied or symlinked
+if [ "$THEMES_COPIED" != "" ]; then
+  echo "Copying themes to the WordPress installation..."
+  for theme_path in /usr/src/wordpress-ci/themes/*; do
+    theme_name=$(basename "$theme_path")
+    echo "Copying theme: $theme_name"
+    cp -Rpdf "$theme_path" "/var/www/html/wp-content/themes/$theme_name"
+  done
+else
+  echo "Symlinking themes to the WordPress installation..."
+  for theme_path in /usr/src/wordpress-ci/themes/*; do
+    theme_name=$(basename "$theme_path")
+    echo "Symlinking theme: $theme_name"
+    ln -s "$theme_path" "/var/www/html/wp-content/themes/$theme_name"
+  done
+fi
+
 # Go to the original entrypoint directory
 cd /usr/src/wordpress
 
