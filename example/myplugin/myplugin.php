@@ -25,13 +25,43 @@ if ( !function_exists( 'add_filter' ) || !function_exists( 'is_front_page' ) ) {
  * @return string The modified content with the message prepended.
  */
 function my_custom_frontpage_message( $content ) {
-    $custom_message = '<div style="padding: 15px; margin-bottom: 20px; background-color: #e7f3fe; border-left: 6px solid #2196F3;">';
-    $custom_message .= '<h3>A Message from My Plugin</h3>';
-    $custom_message .= '<p>My Plugin is active!</p>';
-    $custom_message .= '</div>';
+    static $shown;
+    if ($shown === TRUE) {
+        return $content;
+    }
+    $shown = TRUE;
 
-    // 3. Prepend your message to the original content.
-    return $custom_message . $content;
+    $custom_message = <<<HTML
+    <style>
+    .my-plugin-message {
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #e7f3fe;
+        border-left: 6px solid #2196F3;
+    }
+    </style>
+    HTML;
+
+    // Plugin installation success message
+    $custom_message .= <<<HTML
+    <div class="my-plugin-message">';
+        <h3>A Message from My Plugin</h3>
+        <p>My Plugin is active!</p>
+    </div>
+    HTML;
+
+    // Username display message
+    $username = is_user_logged_in()
+        ? wp_get_current_user()->user_login ?? '(unknown)'
+        : 'Visitor';
+    $custom_message .= <<<HTML
+    <div class="my-plugin-message">
+        <p>Welcome, {$username}!</p>
+    </div>
+    HTML;
+
+    // Prepend your message to the original content.
+    return $custom_message . "\n" . $content;
 }
 
 // 5. Hook the function into WordPress.

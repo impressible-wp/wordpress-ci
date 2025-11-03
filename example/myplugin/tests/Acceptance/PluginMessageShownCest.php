@@ -21,4 +21,11 @@ final class PluginMessageShownCest
         $I->see('My Plugin is active!');
         $I->makeScreenshot('plugin-message-shown');
     }
+
+    public function testIfUsernameIsShown(AcceptanceTester $I): void
+    {
+        $I->amOnPage('/');
+        $I->see("Welcome, Visitor!");
+        $I->makeScreenshot('plugin-username-is-shown');
+    }
 }

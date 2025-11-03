@@ -41,10 +41,10 @@ jobs:
         uses: nanasess/setup-chromedriver@v2
 
       - name: Ensure the Test Output folder exists
-        run: mkdir -p example/tests/_output
+        run: mkdir -p example/_logs
 
       - name: Start Chrome Driver process in background
-        run: chromedriver --port=4444 >example/tests/_output/chromedriver.log 2>&1 &
+        run: chromedriver --port=4444 >example/_logs/chromedriver.log 2>&1 &
 
       # Make a copy of the plugin to be mapped into wordpress-ci container
       # Leave the original plugin folder intact for other steps
@@ -152,4 +152,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: acceptance-test-output
-          path: example/tests/_output/
+          path: |
+            example/_logs/
+            example/myplugin/tests/_output/
+            example/mytheme/tests/_output/
+            example/combined_test/tests/_output/
+            example/import_test/tests/_output/
+            example/rewrite_test/tests/_output/
