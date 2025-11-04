@@ -26234,16 +26234,24 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             container_options.push(`--env=CLEAN_ON_START=yes`);
         }
         if (configs.plugins.length > 0) {
-            container_options.push(...configs.plugins.map(plugin => `--volume=${plugin}:/usr/src/wordpress-ci/plugins/${(0,external_path_.basename)(plugin)}`));
+            container_options.push(...configs.plugins
+                .map(plugin => (0,external_path_.resolve)(plugin))
+                .map(plugin => `--volume=${plugin}:/usr/src/wordpress-ci/plugins/${(0,external_path_.basename)(plugin)}`));
         }
         if (configs.pluginsMapped.length > 0) {
-            container_options.push(...configs.pluginsMapped.map(plugin => `--volume=${plugin}:/usr/src/wordpress-ci/plugins-mapped/${(0,external_path_.basename)(plugin)}`));
+            container_options.push(...configs.pluginsMapped
+                .map(plugin => (0,external_path_.resolve)(plugin))
+                .map(plugin => `--volume=${plugin}:/usr/src/wordpress-ci/plugins-mapped/${(0,external_path_.basename)(plugin)}`));
         }
         if (configs.themes.length > 0) {
-            container_options.push(...configs.themes.map(theme => `--volume=${theme}:/usr/src/wordpress-ci/themes/${(0,external_path_.basename)(theme)}`));
+            container_options.push(...configs.themes
+                .map(theme => (0,external_path_.resolve)(theme))
+                .map(theme => `--volume=${theme}:/usr/src/wordpress-ci/themes/${(0,external_path_.basename)(theme)}`));
         }
         if (configs.themesMapped.length > 0) {
-            container_options.push(...configs.themesMapped.map(theme => `--volume=${theme}:/usr/src/wordpress-ci/themes-mapped/${(0,external_path_.basename)(theme)}`));
+            container_options.push(...configs.themesMapped
+                .map(theme => (0,external_path_.resolve)(theme))
+                .map(theme => `--volume=${theme}:/usr/src/wordpress-ci/themes-mapped/${(0,external_path_.basename)(theme)}`));
         }
         if (configs.importSql !== '') {
             container_options.push(`--env=IMPORT_SQL_FILE=/usr/src/wordpress-ci/import/import.sql`, `--volume=${configs.importSql}:/usr/src/wordpress-ci/import/import.sql`);
@@ -26304,6 +26312,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         installScript('/usr/local/bin/wpci-cmd', _proxiedContainerCommandScript(container_name));
         core.endGroup();
         // Run the test command
+        const originalDir = process.cwd();
         try {
             // change to the test command context directory
             core.startGroup('Change to Test Command Context Directory');
@@ -26326,6 +26335,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
             throw error;
         }
         finally {
+            process.chdir(originalDir);
             core.startGroup('Stop the WordPress CI container');
             await ensureContainerStopped('wordpress-ci');
             core.endGroup();

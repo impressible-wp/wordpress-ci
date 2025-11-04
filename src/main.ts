@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import {basename} from 'path'
+import {basename, resolve} from 'path'
 import c from 'ansi-colors'
 import {
   _ensureContainerRunning,
@@ -190,34 +190,42 @@ export async function run({
     }
     if (configs.plugins.length > 0) {
       container_options.push(
-        ...configs.plugins.map(
-          plugin =>
-            `--volume=${plugin}:/usr/src/wordpress-ci/plugins/${basename(plugin)}`,
-        ),
+        ...configs.plugins
+          .map(plugin => resolve(plugin))
+          .map(
+            plugin =>
+              `--volume=${plugin}:/usr/src/wordpress-ci/plugins/${basename(plugin)}`,
+          ),
       )
     }
     if (configs.pluginsMapped.length > 0) {
       container_options.push(
-        ...configs.pluginsMapped.map(
-          plugin =>
-            `--volume=${plugin}:/usr/src/wordpress-ci/plugins-mapped/${basename(plugin)}`,
-        ),
+        ...configs.pluginsMapped
+          .map(plugin => resolve(plugin))
+          .map(
+            plugin =>
+              `--volume=${plugin}:/usr/src/wordpress-ci/plugins-mapped/${basename(plugin)}`,
+          ),
       )
     }
     if (configs.themes.length > 0) {
       container_options.push(
-        ...configs.themes.map(
-          theme =>
-            `--volume=${theme}:/usr/src/wordpress-ci/themes/${basename(theme)}`,
-        ),
+        ...configs.themes
+          .map(theme => resolve(theme))
+          .map(
+            theme =>
+              `--volume=${theme}:/usr/src/wordpress-ci/themes/${basename(theme)}`,
+          ),
       )
     }
     if (configs.themesMapped.length > 0) {
       container_options.push(
-        ...configs.themesMapped.map(
-          theme =>
-            `--volume=${theme}:/usr/src/wordpress-ci/themes-mapped/${basename(theme)}`,
-        ),
+        ...configs.themesMapped
+          .map(theme => resolve(theme))
+          .map(
+            theme =>
+              `--volume=${theme}:/usr/src/wordpress-ci/themes-mapped/${basename(theme)}`,
+          ),
       )
     }
     if (configs.importSql !== '') {
@@ -304,6 +312,7 @@ export async function run({
     core.endGroup()
 
     // Run the test command
+    const originalDir = process.cwd()
     try {
       // change to the test command context directory
       core.startGroup('Change to Test Command Context Directory')
@@ -328,6 +337,7 @@ export async function run({
       core.setFailed(`Error fetching frontpage: ${(error as Error).message}`)
       throw error
     } finally {
+      process.chdir(originalDir)
       core.startGroup('Stop the WordPress CI container')
       await ensureContainerStopped('wordpress-ci')
       core.endGroup()

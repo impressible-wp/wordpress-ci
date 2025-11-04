@@ -1,5 +1,6 @@
 import {run, RunEnvironment} from '../src/main'
 import * as core from '@actions/core'
+import {basename, resolve} from 'path'
 
 // Mock the action's core module
 jest.mock('@actions/core')
@@ -47,7 +48,7 @@ describe('action', () => {
         case 'network':
           return 'some-network'
         case 'plugins':
-          return './plugin1\n./plugin2'
+          return './plugin1\n./plugin2\n.'
         case 'plugins-mapped':
           return './plugin1-mapped\n./plugin2-mapped'
         case 'themes':
@@ -96,7 +97,7 @@ describe('action', () => {
     )
 
     expect(mockCore.debug).toHaveBeenCalledWith(
-      `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`,
+      `plugins: ${JSON.stringify(['./plugin1', './plugin2', '.'])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith(
       `plugins-mapped: ${JSON.stringify(['./plugin1-mapped', './plugin2-mapped'])}`,
@@ -112,6 +113,9 @@ describe('action', () => {
       'test-command-context: ./example',
     )
 
+    // Make sure the plugin name resolve works with '.'
+    expect(basename(resolve('.'))).not.toBe('.')
+
     // Assert the container running function was called with correct params
     expect(mockRunEnv.ensureContainerRunning).toHaveBeenCalledWith(
       'registry.io/some-vendor/image-name:some-image-tag',
@@ -122,16 +126,17 @@ describe('action', () => {
         '--env=WORDPRESS_DB_USER=some-db-user',
         '--env=WORDPRESS_DB_PASSWORD=some-db-password',
         '--env=CLEAN_ON_START=yes',
-        '--volume=./plugin1:/usr/src/wordpress-ci/plugins/plugin1',
-        '--volume=./plugin2:/usr/src/wordpress-ci/plugins/plugin2',
-        '--volume=./plugin1-mapped:/usr/src/wordpress-ci/plugins-mapped/plugin1-mapped',
-        '--volume=./plugin2-mapped:/usr/src/wordpress-ci/plugins-mapped/plugin2-mapped',
-        '--volume=./theme1:/usr/src/wordpress-ci/themes/theme1',
-        '--volume=./theme2:/usr/src/wordpress-ci/themes/theme2',
-        '--volume=./theme1-mapped:/usr/src/wordpress-ci/themes-mapped/theme1-mapped',
-        '--volume=./theme2-mapped:/usr/src/wordpress-ci/themes-mapped/theme2-mapped',
-        '--env=IMPORT_SQL_FILE=/usr/src/wordpress-ci/import/import.sql',
-        '--volume=./some-db-export.sql:/usr/src/wordpress-ci/import/import.sql',
+        `--volume=${resolve('./plugin1')}:/usr/src/wordpress-ci/plugins/plugin1`,
+        `--volume=${resolve('./plugin2')}:/usr/src/wordpress-ci/plugins/plugin2`,
+        `--volume=${resolve('.')}:/usr/src/wordpress-ci/plugins/${basename(resolve('.'))}`,
+        `--volume=${resolve('./plugin1-mapped')}:/usr/src/wordpress-ci/plugins-mapped/plugin1-mapped`,
+        `--volume=${resolve('./plugin2-mapped')}:/usr/src/wordpress-ci/plugins-mapped/plugin2-mapped`,
+        `--volume=${resolve('./theme1')}:/usr/src/wordpress-ci/themes/theme1`,
+        `--volume=${resolve('./theme2')}:/usr/src/wordpress-ci/themes/theme2`,
+        `--volume=${resolve('./theme1-mapped')}:/usr/src/wordpress-ci/themes-mapped/theme1-mapped`,
+        `--volume=${resolve('./theme2-mapped')}:/usr/src/wordpress-ci/themes-mapped/theme2-mapped`,
+        `--env=IMPORT_SQL_FILE=/usr/src/wordpress-ci/import/import.sql`,
+        `--volume=./some-db-export.sql:/usr/src/wordpress-ci/import/import.sql`,
       ],
     )
 
