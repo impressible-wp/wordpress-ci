@@ -8,24 +8,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- GitHub Action branding with check-square icon and purple color
+- Support for symlinked plugins and themes via `plugins-mapped` and `themes-mapped` inputs
+- Enhanced acceptance testing with colored output (red for errors, green for success)
+- Better logging in docker-entrypoint with improved error handling
 - Acceptance test to verify mod_rewrite functionality
 - Custom route testing in example plugin to validate URL rewriting
 - New PHP test script for rewrite setup validation
 
+### Changed
+
+- **BREAKING:** Default behavior now copies plugins and themes instead of symlinking them
+- Plugins and themes are now copied by default for better compatibility
+- New `plugins-mapped` and `themes-mapped` inputs provide symlinking behavior when needed
+
+### Removed
+
+- Obsoleted action outputs (`stdout`, `stderr`, `time`) that were no longer used
+
 ### Fixed
+
 - Echo command call in Dockerfile for better Docker build compatibility
+- Updated acceptance tests to handle new copy vs symlink behavior
+- Improved test file formatting consistency
 
 ## [v1.0.4] - 2025-10-22
 
 ### Added
+
 - Less package installation in Docker container for improved development experience
 - Comprehensive package documentation in Dockerfile
 
 ### Changed
+
 - WP-CLI configuration to enable mod_rewrite support
 - Enhanced .htaccess regeneration with `wp rewrite flush --hard` functionality
 
 ### Fixed
+
 - mod_rewrite configuration to work properly with WP-CLI commands
 
 ## [v1.0.3] - 2025-10-22
