@@ -48,8 +48,12 @@ describe('action', () => {
           return 'some-network'
         case 'plugins':
           return './plugin1\n./plugin2'
+        case 'plugins-mapped':
+          return './plugin1-mapped\n./plugin2-mapped'
         case 'themes':
           return './theme1\n./theme2'
+        case 'themes-mapped':
+          return './theme1-mapped\n./theme2-mapped'
         case 'db-host':
           return 'some-db-host'
         case 'db-name':
@@ -95,7 +99,13 @@ describe('action', () => {
       `plugins: ${JSON.stringify(['./plugin1', './plugin2'])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith(
+      `plugins-mapped: ${JSON.stringify(['./plugin1-mapped', './plugin2-mapped'])}`,
+    )
+    expect(mockCore.debug).toHaveBeenCalledWith(
       `themes: ${JSON.stringify(['./theme1', './theme2'])}`,
+    )
+    expect(mockCore.debug).toHaveBeenCalledWith(
+      `themes-mapped: ${JSON.stringify(['./theme1-mapped', './theme2-mapped'])}`,
     )
     expect(mockCore.debug).toHaveBeenCalledWith('test-command: test command')
     expect(mockCore.debug).toHaveBeenCalledWith(
@@ -114,8 +124,12 @@ describe('action', () => {
         '--env=CLEAN_ON_START=yes',
         '--volume=./plugin1:/usr/src/wordpress-ci/plugins/plugin1',
         '--volume=./plugin2:/usr/src/wordpress-ci/plugins/plugin2',
+        '--volume=./plugin1-mapped:/usr/src/wordpress-ci/plugins-mapped/plugin1-mapped',
+        '--volume=./plugin2-mapped:/usr/src/wordpress-ci/plugins-mapped/plugin2-mapped',
         '--volume=./theme1:/usr/src/wordpress-ci/themes/theme1',
         '--volume=./theme2:/usr/src/wordpress-ci/themes/theme2',
+        '--volume=./theme1-mapped:/usr/src/wordpress-ci/themes-mapped/theme1-mapped',
+        '--volume=./theme2-mapped:/usr/src/wordpress-ci/themes-mapped/theme2-mapped',
         '--env=IMPORT_SQL_FILE=/usr/src/wordpress-ci/import/import.sql',
         '--volume=./some-db-export.sql:/usr/src/wordpress-ci/import/import.sql',
       ],

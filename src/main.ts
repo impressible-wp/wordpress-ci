@@ -38,9 +38,9 @@ function getConfigs(): {
   dbPassword: string
   network: string
   plugins: string[]
-  pluginsCopied: boolean
+  pluginsMapped: string[]
   themes: string[]
-  themesCopied: boolean
+  themesMapped: string[]
   cleanOnStart: boolean
   importSql: string
   testCommand: string
@@ -62,11 +62,12 @@ function getConfigs(): {
     .filter(p => p)
   core.debug(`plugins: ${JSON.stringify(plugins)}`)
 
-  const pluginsCopiedStr = core.getInput('copy-plugins').trim()
-  const pluginsCopied = ['true', 'yes', '1'].includes(
-    pluginsCopiedStr.toLowerCase(),
-  )
-  core.debug(`plugins-copied: ${pluginsCopied}`)
+  const pluginsMappedStr = core.getInput('plugins-mapped').trim()
+  const pluginsMapped = pluginsMappedStr
+    .split('\n')
+    .map(p => p.trim())
+    .filter(p => p)
+  core.debug(`plugins-mapped: ${JSON.stringify(pluginsMapped)}`)
 
   const themesStr = core.getInput('themes').trim()
   const themes = themesStr
@@ -75,11 +76,12 @@ function getConfigs(): {
     .filter(t => t)
   core.debug(`themes: ${JSON.stringify(themes)}`)
 
-  const themesCopiedStr = core.getInput('copy-themes').trim()
-  const themesCopied = ['true', 'yes', '1'].includes(
-    themesCopiedStr.toLowerCase(),
-  )
-  core.debug(`themes-copied: ${themesCopied}`)
+  const themesMappedStr = core.getInput('themes-mapped').trim()
+  const themesMapped = themesMappedStr
+    .split('\n')
+    .map(t => t.trim())
+    .filter(t => t)
+  core.debug(`themes-mapped: ${JSON.stringify(themesMapped)}`)
 
   // Input(s) for the installation of WordPress in the container
   const dbHost = core.getInput('db-host').trim()
@@ -120,9 +122,9 @@ function getConfigs(): {
     image,
     network,
     plugins,
-    pluginsCopied,
+    pluginsMapped,
     themes,
-    themesCopied,
+    themesMapped,
     dbHost,
     dbName,
     dbUser,
@@ -194,8 +196,13 @@ export async function run({
         ),
       )
     }
-    if (configs.pluginsCopied) {
-      container_options.push('--env=COPY_PLUGINS=yes')
+    if (configs.pluginsMapped.length > 0) {
+      container_options.push(
+        ...configs.pluginsMapped.map(
+          plugin =>
+            `--volume=${plugin}:/usr/src/wordpress-ci/plugins-mapped/${basename(plugin)}`,
+        ),
+      )
     }
     if (configs.themes.length > 0) {
       container_options.push(
@@ -205,8 +212,13 @@ export async function run({
         ),
       )
     }
-    if (configs.themesCopied) {
-      container_options.push('--env=COPY_THEMES=yes')
+    if (configs.themesMapped.length > 0) {
+      container_options.push(
+        ...configs.themesMapped.map(
+          theme =>
+            `--volume=${theme}:/usr/src/wordpress-ci/themes-mapped/${basename(theme)}`,
+        ),
+      )
     }
     if (configs.importSql !== '') {
       container_options.push(

@@ -104,6 +104,56 @@ jobs:
             composer run test
           test-command-context: ./example/combined_test
 
+      # Just check if the plugins and themes are copied by default
+      - name: Copied Behaviour (default)
+        uses: ./
+        with:
+          image: ${{ inputs.image }}
+          plugins: ./example/myplugin
+          themes: ./example/mytheme
+          test-command: |
+            # Check that both plugin and theme are copied instead of symlink
+            if [ ! -d "/var/www/html/wp-content/plugins/myplugin" ]; then
+              echo "Plugin directory is missing."
+              exit 1
+            elif [ ! -d "/var/www/html/wp-content/themes/mytheme" ]; then
+              echo "Theme directory is missing."
+              exit 1
+            fi
+            if [ -L "/var/www/html/wp-content/plugins/myplugin" ]; then
+              echo "Plugin is symlinked, but it should be copied."
+              exit 1
+            elif [ -L "/var/www/html/wp-content/themes/mytheme" ]; then
+              echo "Theme is symlinked, but it should be copied."
+              exit 1
+            fi
+          test-command-context: ./example/combined_test
+
+      # Check if the plugins and themes are symlinked when using the mapped inputs
+      - name: Symlinked Behaviour
+        uses: ./
+        with:
+          image: ${{ inputs.image }}
+          plugins-mapped: ./example/myplugin
+          themes-mapped: ./example/mytheme
+          test-command: |
+            # Check that both plugin and theme are symlink instead of copy
+            if [ ! -d "/var/www/html/wp-content/plugins/myplugin" ]; then
+              echo "Plugin directory is missing."
+              exit 1
+            elif [ ! -d "/var/www/html/wp-content/themes/mytheme" ]; then
+              echo "Theme directory is missing."
+              exit 1
+            fi
+            if [ ! -L "/var/www/html/wp-content/plugins/myplugin" ]; then
+              echo "Plugin is not symlinked, but it should be."
+              exit 1
+            elif [ ! -L "/var/www/html/wp-content/themes/mytheme" ]; then
+              echo "Theme is not symlinked, but it should be."
+              exit 1
+            fi
+          test-command-context: ./example/combined_test
+
       - name: Import Test
         uses: ./
         with:

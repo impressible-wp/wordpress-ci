@@ -77,38 +77,60 @@ else
     --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
 fi
 
-# Check if the plugins should be copied or symlinked
-if [ "$PLUGINS_COPIED" != "" ]; then
-  echo "Copying plugins to the WordPress installation..."
-  for plugin_path in /usr/src/wordpress-ci/plugins/*; do
-    plugin_name=$(basename "$plugin_path")
-    echo "Copying plugin: $plugin_name"
-    cp -Rpdf "$plugin_path" "/var/www/html/wp-content/plugins/$plugin_name"
+# Find all plugins in the /usr/src/wordpress-ci/plugins directory
+# and copy them to the WordPress plugins directory.
+if [ -d /usr/src/wordpress-ci/plugins ]; then
+  echo "Copying plugins to WordPress plugins directory..."
+  for plugin_dir in /usr/src/wordpress-ci/plugins/*; do
+    if [ -d "$plugin_dir" ]; then
+      echo "Copying plugin: $(basename "$plugin_dir")"
+      cp -Rpdf "$plugin_dir" /var/www/html/wp-content/plugins/
+    fi
   done
 else
-  echo "Symlinking plugins to the WordPress installation..."
-  for plugin_path in /usr/src/wordpress-ci/plugins/*; do
-    plugin_name=$(basename "$plugin_path")
-    echo "Symlinking plugin: $plugin_name"
-    ln -s "$plugin_path" "/var/www/html/wp-content/plugins/$plugin_name"
-  done
+  echo "No plugins directory found in /usr/src/wordpress-ci, skipping plugin copy."
 fi
 
-# Check if the themes should be copied or symlinked
-if [ "$THEMES_COPIED" != "" ]; then
-  echo "Copying themes to the WordPress installation..."
-  for theme_path in /usr/src/wordpress-ci/themes/*; do
-    theme_name=$(basename "$theme_path")
-    echo "Copying theme: $theme_name"
-    cp -Rpdf "$theme_path" "/var/www/html/wp-content/themes/$theme_name"
+# Find all plugins in the /usr/src/wordpress-ci/plugins-mapped directory
+# and symlink them to the WordPress plugins directory.
+if [ -d /usr/src/wordpress-ci/plugins-mapped ]; then
+  echo "Mapping plugins to WordPress plugins directory..."
+  for plugin_dir in /usr/src/wordpress-ci/plugins-mapped/*; do
+    if [ -d "$plugin_dir" ]; then
+      echo "Mapping plugin: $(basename "$plugin_dir")"
+      ln -s "$plugin_dir" /var/www/html/wp-content/plugins/$(basename "$plugin_dir")
+    fi
   done
 else
-  echo "Symlinking themes to the WordPress installation..."
-  for theme_path in /usr/src/wordpress-ci/themes/*; do
-    theme_name=$(basename "$theme_path")
-    echo "Symlinking theme: $theme_name"
-    ln -s "$theme_path" "/var/www/html/wp-content/themes/$theme_name"
+  echo "No plugins-mapped directory found in /usr/src/wordpress-ci, skipping plugin mapping."
+fi
+
+# Find all themes in the /usr/src/wordpress-ci/themes directory
+# and copy them to the WordPress themes directory.
+if [ -d /usr/src/wordpress-ci/themes ]; then
+  echo "Copying themes to WordPress themes directory..."
+  for theme_dir in /usr/src/wordpress-ci/themes/*; do
+    if [ -d "$theme_dir" ]; then
+      echo "Copying theme: $(basename "$theme_dir")"
+      cp -Rpdf "$theme_dir" /var/www/html/wp-content/themes/
+    fi
   done
+else
+  echo "No themes directory found in /usr/src/wordpress-ci, skipping theme copy."
+fi
+
+# Find all themes in the /usr/src/wordpress-ci/themes-mapped directory
+# and symlink them to the WordPress themes directory.
+if [ -d /usr/src/wordpress-ci/themes-mapped ]; then
+  echo "Mapping themes to WordPress themes directory..."
+  for theme_dir in /usr/src/wordpress-ci/themes-mapped/*; do
+    if [ -d "$theme_dir" ]; then
+      echo "Mapping theme: $(basename "$theme_dir")"
+      ln -s "$theme_dir" /var/www/html/wp-content/themes/$(basename "$theme_dir")
+    fi
+  done
+else
+  echo "No themes-mapped directory found in /usr/src/wordpress-ci, skipping theme mapping."
 fi
 
 # Go to the original entrypoint directory
