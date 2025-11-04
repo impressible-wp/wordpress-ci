@@ -7,8 +7,7 @@
 # is the WordPress installation directory, which is not the case how a plugin
 # developer wants.
 #
-set -o pipefail
-set -ex
+set -exo pipefail
 
 echo "Starting with environment variables:"
 env
@@ -44,7 +43,8 @@ while ! wp db check --allow-root --quiet; do
         exit 1
     fi
 done
-set -e  # Re-enable exit on error
+echo
+set -exo pipefail
 
 # Check if the database should be clean on start
 echo "Check if need to clean database on start: CLEAN_ON_START='$CLEAN_ON_START'"
@@ -56,6 +56,8 @@ elif [ "$CLEAN_ON_START" != "" ]; then
 else
   echo "Not cleaning the database on start"
 fi
+echo
+set -exo pipefail
 
 # Check if an import SQL file is specified and present.
 echo "IMPORT_SQL_FILE is set to: '$IMPORT_SQL_FILE'"
@@ -76,62 +78,80 @@ else
     --admin_password="${WORDPRESS_ADMIN_PASSWORD:-password}" \
     --admin_email="${WORDPRESS_ADMIN_EMAIL:-user@example.com}"
 fi
+echo
+set -exo pipefail
 
 # Find all plugins in the /usr/src/wordpress-ci/plugins directory
 # and copy them to the WordPress plugins directory.
 if [ -d /usr/src/wordpress-ci/plugins ]; then
+  echo "Listing plugins to be copied:"
+  ls -l /usr/src/wordpress-ci/plugins
   echo "Copying plugins to WordPress plugins directory..."
   for plugin_dir in /usr/src/wordpress-ci/plugins/*; do
     if [ -d "$plugin_dir" ]; then
       echo "Copying plugin: $(basename "$plugin_dir")"
       cp -Rpdf "$plugin_dir" /var/www/html/wp-content/plugins/
+      ls -la /var/www/html/wp-content/plugins
     fi
   done
 else
   echo "No plugins directory found in /usr/src/wordpress-ci, skipping plugin copy."
 fi
+echo
 
 # Find all plugins in the /usr/src/wordpress-ci/plugins-mapped directory
 # and symlink them to the WordPress plugins directory.
 if [ -d /usr/src/wordpress-ci/plugins-mapped ]; then
+  echo "Listing plugins to be mapped:"
+  ls -l /usr/src/wordpress-ci/plugins-mapped
   echo "Mapping plugins to WordPress plugins directory..."
   for plugin_dir in /usr/src/wordpress-ci/plugins-mapped/*; do
     if [ -d "$plugin_dir" ]; then
       echo "Mapping plugin: $(basename "$plugin_dir")"
       ln -s "$plugin_dir" /var/www/html/wp-content/plugins/$(basename "$plugin_dir")
+      ls -la /var/www/html/wp-content/plugins
     fi
   done
 else
   echo "No plugins-mapped directory found in /usr/src/wordpress-ci, skipping plugin mapping."
 fi
+echo
 
 # Find all themes in the /usr/src/wordpress-ci/themes directory
 # and copy them to the WordPress themes directory.
 if [ -d /usr/src/wordpress-ci/themes ]; then
+  echo "Listing themes to be copied:"
+  ls -l /usr/src/wordpress-ci/themes
   echo "Copying themes to WordPress themes directory..."
   for theme_dir in /usr/src/wordpress-ci/themes/*; do
     if [ -d "$theme_dir" ]; then
       echo "Copying theme: $(basename "$theme_dir")"
       cp -Rpdf "$theme_dir" /var/www/html/wp-content/themes/
+      ls -la /var/www/html/wp-content/themes
     fi
   done
 else
   echo "No themes directory found in /usr/src/wordpress-ci, skipping theme copy."
 fi
+echo
 
 # Find all themes in the /usr/src/wordpress-ci/themes-mapped directory
 # and symlink them to the WordPress themes directory.
 if [ -d /usr/src/wordpress-ci/themes-mapped ]; then
+  echo "Listing themes to be mapped:"
+  ls -l /usr/src/wordpress-ci/themes-mapped
   echo "Mapping themes to WordPress themes directory..."
   for theme_dir in /usr/src/wordpress-ci/themes-mapped/*; do
     if [ -d "$theme_dir" ]; then
       echo "Mapping theme: $(basename "$theme_dir")"
       ln -s "$theme_dir" /var/www/html/wp-content/themes/$(basename "$theme_dir")
+      ls -la /var/www/html/wp-content/themes
     fi
   done
 else
   echo "No themes-mapped directory found in /usr/src/wordpress-ci, skipping theme mapping."
 fi
+echo
 
 # Go to the original entrypoint directory
 cd /usr/src/wordpress
