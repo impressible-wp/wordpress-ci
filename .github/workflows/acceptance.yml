@@ -46,13 +46,6 @@ jobs:
       - name: Start Chrome Driver process in background
         run: chromedriver --port=4444 >example/_logs/chromedriver.log 2>&1 &
 
-      # Make a copy of the plugin to be mapped into wordpress-ci container
-      # Leave the original plugin folder intact for other steps
-      - name: Make a copy of the example plugin for test
-        run: |
-          mkdir ./temp
-          cp -Rpdf ./example ./temp/example
-
       - name: Test My Plugin
         uses: ./
         with:
@@ -102,6 +95,58 @@ jobs:
             # Test may get the URL of the site from environment variable: $WORDPRESS_CI_URL
             composer install
             composer run test
+          test-command-context: ./example/combined_test
+
+      # Just check if the plugins and themes are copied by default
+      - name: Plugin and Theme Copying
+        uses: ./
+        with:
+          image: ${{ inputs.image }}
+          plugins: ./example/myplugin
+          themes: ./example/mytheme
+          test-command: |
+            # Check that both plugin and theme are copied instead of symlink
+            if ! wpci-cmd test -d "/var/www/html/wp-content/plugins/myplugin"; then
+              echo -e "\033[31mPlugin directory is missing.\033[0m"
+              exit 1
+            elif ! wpci-cmd test -d "/var/www/html/wp-content/themes/mytheme"; then
+              echo -e "\033[31mTheme directory is missing.\033[0m"
+              exit 1
+            fi
+            if wpci-cmd test -L "/var/www/html/wp-content/plugins/myplugin"; then
+              echo -e "\033[31mPlugin is a symlinked, but it should not be.\033[0m"
+              exit 1
+            elif wpci-cmd test -L "/var/www/html/wp-content/themes/mytheme"; then
+              echo -e "\033[31mTheme is a symlinked, but it should not be.\033[0m"
+              exit 1
+            fi
+            echo -e "\033[32mCopied behaviour test passed.\033[0m"
+          test-command-context: ./example/combined_test
+
+      # Check if the plugins and themes are symlinked when using the mapped inputs
+      - name: Plugin and Theme Symlinking
+        uses: ./
+        with:
+          image: ${{ inputs.image }}
+          plugins-mapped: ./example/myplugin
+          themes-mapped: ./example/mytheme
+          test-command: |
+            # Check that both plugin and theme are symlink instead of copy
+            if ! wpci-cmd test -d "/var/www/html/wp-content/plugins/myplugin"; then
+              echo -e "\033[31mPlugin directory is missing.\033[0m"
+              exit 1
+            elif ! wpci-cmd test -d "/var/www/html/wp-content/themes/mytheme"; then
+              echo -e "\033[31mTheme directory is missing.\033[0m"
+              exit 1
+            fi
+            if ! wpci-cmd test -L "/var/www/html/wp-content/plugins/myplugin"; then
+              echo -e "\033[31mPlugin is not symlinked, but it should be.\033[0m"
+              exit 1
+            elif ! wpci-cmd test -L "/var/www/html/wp-content/themes/mytheme"; then
+              echo -e "\033[31mTheme is not symlinked, but it should be.\033[0m"
+              exit 1
+            fi
+            echo -e "\033[32mSymlinked behaviour test passed.\033[0m"
           test-command-context: ./example/combined_test
 
       - name: Import Test

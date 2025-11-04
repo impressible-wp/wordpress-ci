@@ -16,9 +16,11 @@ services:
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
+      PLUGINS_COPIED: 'true'
+      THEMES_COPIED: 'true'
     volumes:
-      - ./example/myplugin:/var/www/html/wp-content/plugins/myplugin:Z
-      - ./example/mytheme:/var/www/html/wp-content/themes/mytheme:Z
+      - ./example/myplugin:/usr/src/wordpress-ci/plugins/myplugin:Z
+      - ./example/mytheme:/usr/src/wordpress-ci/themes/mytheme:Z
     ports:
       - '8080:80'
     networks:

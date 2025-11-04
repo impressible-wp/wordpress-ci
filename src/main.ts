@@ -38,7 +38,9 @@ function getConfigs(): {
   dbPassword: string
   network: string
   plugins: string[]
+  pluginsMapped: string[]
   themes: string[]
+  themesMapped: string[]
   cleanOnStart: boolean
   importSql: string
   testCommand: string
@@ -60,12 +62,26 @@ function getConfigs(): {
     .filter(p => p)
   core.debug(`plugins: ${JSON.stringify(plugins)}`)
 
+  const pluginsMappedStr = core.getInput('plugins-mapped').trim()
+  const pluginsMapped = pluginsMappedStr
+    .split('\n')
+    .map(p => p.trim())
+    .filter(p => p)
+  core.debug(`plugins-mapped: ${JSON.stringify(pluginsMapped)}`)
+
   const themesStr = core.getInput('themes').trim()
   const themes = themesStr
     .split('\n')
     .map(t => t.trim())
     .filter(t => t)
   core.debug(`themes: ${JSON.stringify(themes)}`)
+
+  const themesMappedStr = core.getInput('themes-mapped').trim()
+  const themesMapped = themesMappedStr
+    .split('\n')
+    .map(t => t.trim())
+    .filter(t => t)
+  core.debug(`themes-mapped: ${JSON.stringify(themesMapped)}`)
 
   // Input(s) for the installation of WordPress in the container
   const dbHost = core.getInput('db-host').trim()
@@ -106,13 +122,15 @@ function getConfigs(): {
     image,
     network,
     plugins,
+    pluginsMapped,
+    themes,
+    themesMapped,
     dbHost,
     dbName,
     dbUser,
     dbPassword,
     cleanOnStart,
     importSql,
-    themes,
     testCommand,
     testCommandContext,
   }
@@ -174,7 +192,15 @@ export async function run({
       container_options.push(
         ...configs.plugins.map(
           plugin =>
-            `--volume=${plugin}:/var/www/html/wp-content/plugins/${basename(plugin)}`,
+            `--volume=${plugin}:/usr/src/wordpress-ci/plugins/${basename(plugin)}`,
+        ),
+      )
+    }
+    if (configs.pluginsMapped.length > 0) {
+      container_options.push(
+        ...configs.pluginsMapped.map(
+          plugin =>
+            `--volume=${plugin}:/usr/src/wordpress-ci/plugins-mapped/${basename(plugin)}`,
         ),
       )
     }
@@ -182,14 +208,22 @@ export async function run({
       container_options.push(
         ...configs.themes.map(
           theme =>
-            `--volume=${theme}:/var/www/html/wp-content/themes/${basename(theme)}`,
+            `--volume=${theme}:/usr/src/wordpress-ci/themes/${basename(theme)}`,
+        ),
+      )
+    }
+    if (configs.themesMapped.length > 0) {
+      container_options.push(
+        ...configs.themesMapped.map(
+          theme =>
+            `--volume=${theme}:/usr/src/wordpress-ci/themes-mapped/${basename(theme)}`,
         ),
       )
     }
     if (configs.importSql !== '') {
       container_options.push(
-        `--env=IMPORT_SQL_FILE=/opt/imports/import.sql`,
-        `--volume=${configs.importSql}:/opt/imports/import.sql`,
+        `--env=IMPORT_SQL_FILE=/usr/src/wordpress-ci/import/import.sql`,
+        `--volume=${configs.importSql}:/usr/src/wordpress-ci/import/import.sql`,
       )
     }
 
