@@ -1,6 +1,9 @@
 name: 'WordPress CI'
 description: 'WordPress Plugin or Theme CI environment'
 author: 'Impressible'
+branding:
+  icon: check-square
+  color: purple
 inputs:
   # Input(s) for getting the WordPress CI container image
   image:
