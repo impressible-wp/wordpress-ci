@@ -73,13 +73,6 @@ inputs:
     description: 'Directory to run the test command in'
     required: false
     default: '.'
-outputs:
-  stdout:
-    description: 'The standard output of the action'
-  stderr:
-    description: 'The standard error output of the action'
-  time:
-    description: 'The time the action was run'
 runs:
   using: 'node20'
   main: 'dist/index.js'
