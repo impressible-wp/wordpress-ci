@@ -141,12 +141,13 @@ describe('action', () => {
     )
 
     // Assert the outputs
+    expect(mockCore.setOutput).toHaveBeenCalledWith('image', expect.any(String))
     expect(mockCore.setOutput).toHaveBeenCalledWith(
-      'stdout',
+      'php-version',
       expect.any(String),
     )
     expect(mockCore.setOutput).toHaveBeenCalledWith(
-      'stderr',
+      'wordpress-version',
       expect.any(String),
     )
     expect(mockCore.setOutput).toHaveBeenCalledWith('time', expect.any(Number))

@@ -26219,7 +26219,7 @@ function getConfigs() {
  * The main function for the action.
  * @returns {void} Completes when the action is done.
  */
-async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, getContainerInfoByDNSName = _getContainerInfoByDNSName, installScript = _installScript, showContainerLogs = _showContainerLogs, waitForHttpServer = _waitForHttpServer, } = {}) {
+async function run({ ensureContainerRunning = _ensureContainerRunning, ensureContainerStopped = _ensureContainerStopped, getContainerInfoByDNSName = _getContainerInfoByDNSName, installScript = _installScript, shellExec = _shellExec, showContainerLogs = _showContainerLogs, waitForHttpServer = _waitForHttpServer, } = {}) {
     const startTime = new Date().getTime();
     let commandOutput = { stdout: '', stderr: '' };
     try {
@@ -26311,6 +26311,16 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
         core.startGroup('Setup proxy script to run command in WordPress CI container');
         installScript('/usr/local/bin/wpci-cmd', _proxiedContainerCommandScript(container_name));
         core.endGroup();
+        // Inspect the software versions for outputs
+        core.startGroup('Inspect WordPress CI software versions');
+        const phpVersionOutput = await shellExec('wpci-cmd php -v');
+        const wordpressVersionOutput = await shellExec('wpci-cmd wp core version');
+        core.info(`PHP Version: ${phpVersionOutput.stdout.trim()}`);
+        core.info(`WordPress Version: ${wordpressVersionOutput.stdout.trim()}`);
+        core.setOutput('php-version', phpVersionOutput.stdout.trim());
+        core.setOutput('wordpress-version', wordpressVersionOutput.stdout.trim());
+        core.setOutput('image', configs.image);
+        core.endGroup();
         // Run the test command
         const originalDir = process.cwd();
         try {
@@ -26324,7 +26334,7 @@ async function run({ ensureContainerRunning = _ensureContainerRunning, ensureCon
                 core.startGroup('Run Test Command');
                 core.info(ansi_colors_default().blue(configs.testCommand));
                 core.endGroup();
-                commandOutput = (await _shellExec(configs.testCommand));
+                commandOutput = (await shellExec(configs.testCommand));
             }
             else {
                 core.info('No test command provided, skipping test execution.');

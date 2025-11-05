@@ -82,6 +82,78 @@ jobs:
 
           docker buildx build --push "${ARGS[@]}" ./docker
 
+  test:
+    name: Test the built image
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        php-version: [8.1, 8.2, 8.3, 8.4]
+        wordpress-version: [latest]
+    services:
+      mysql:
+        image: mariadb:12
+        env:
+          MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
+          MARIADB_DATABASE: wordpress
+          MARIADB_USER: username
+          MARIADB_PASSWORD: password
+        ports:
+          - 3306:3306
+    steps:
+      - name: Pull the Docker image
+        run: |
+          echo "Login to GitHub Container Registry"
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+
+          IMAGE_URL=$REGISTRY/$IMAGE_NAME:sha256-${{ github.sha }}-php${{ matrix.php-version }}
+          echo "Pulling Docker image: $IMAGE_URL"
+          docker pull $IMAGE_URL
+
+      - name: Inspect the software in the image and set to output
+        run: |
+          IMAGE_URL=$REGISTRY/$IMAGE_NAME:sha256-${{ github.sha }}-php${{ matrix.php-version }}
+          echo "Inspecting Docker image: $IMAGE_URL"
+
+          docker run --rm $IMAGE_URL bash -c "
+            echo 'PHP Version:'
+            php -v
+            echo ''
+            echo 'WordPress Version:'
+            wp core version --path=/var/www/html
+          "
+          PHP_VERSION=$(docker run --rm $IMAGE_URL php -r "echo PHP_VERSION;")
+          WORDPRESS_VERSION=$(docker run --rm $IMAGE_URL wp core version --path=/var/www/html)
+        id: inspect
+
+      - name: Check Action Outputs
+        uses: ./
+        with:
+          image: $REGISTRY/$IMAGE_NAME:sha256-${{ github.sha }}-php${{ matrix.php-version }}
+          db-host: mysql
+          test-command: |
+            echo "Run a dummy test here just to inspect the output"
+        id: test
+
+      - name: Check if action output matches the inspected values
+        run: |
+          echo "PHP Version from inspect step: ${{ steps.inspect.outputs.PHP_VERSION }}"
+          echo "PHP Version from action output: ${{ steps.test.outputs.php-version }}"
+
+          echo "WordPress Version from inspect step: ${{ steps.inspect.outputs.WORDPRESS_VERSION }}"
+          echo "WordPress Version from action output: ${{ steps.test.outputs.wordpress-version }}"
+
+          if [[ "${{ steps.inspect.outputs.PHP_VERSION }}" != "${{ steps.test.outputs.php-version }}" ]]; then
+            echo "PHP versions do not match!"
+            exit 1
+          fi
+
+          if [[ "${{ steps.inspect.outputs.WORDPRESS_VERSION }}" != "${{ steps.test.outputs.wordpress-version }}" ]]; then
+            echo "WordPress versions do not match!"
+            exit 1
+          fi
+
   run-acceptance-tests:
     name: Acceptance Tests
     needs: build

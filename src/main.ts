@@ -154,6 +154,7 @@ export interface RunEnvironment {
   getContainerInfoByDNSName?: (
     matchString: string,
   ) => Promise<ContainerNetworkInfo>
+  shellExec?: (command: string) => Promise<{stdout: string; stderr: string}>
   showContainerLogs?: (
     container_name: string,
   ) => Promise<{stdout: string; stderr: string}>
@@ -169,6 +170,7 @@ export async function run({
   ensureContainerStopped = _ensureContainerStopped,
   getContainerInfoByDNSName = _getContainerInfoByDNSName,
   installScript = _installScript,
+  shellExec = _shellExec,
   showContainerLogs = _showContainerLogs,
   waitForHttpServer = _waitForHttpServer,
 }: RunEnvironment = {}): Promise<void> {
@@ -311,6 +313,17 @@ export async function run({
     )
     core.endGroup()
 
+    // Inspect the software versions for outputs
+    core.startGroup('Inspect WordPress CI software versions')
+    const phpVersionOutput = await shellExec('wpci-cmd php -v')
+    const wordpressVersionOutput = await shellExec('wpci-cmd wp core version')
+    core.info(`PHP Version: ${phpVersionOutput.stdout.trim()}`)
+    core.info(`WordPress Version: ${wordpressVersionOutput.stdout.trim()}`)
+    core.setOutput('php-version', phpVersionOutput.stdout.trim())
+    core.setOutput('wordpress-version', wordpressVersionOutput.stdout.trim())
+    core.setOutput('image', configs.image)
+    core.endGroup()
+
     // Run the test command
     const originalDir = process.cwd()
     try {
@@ -326,7 +339,7 @@ export async function run({
         core.info(c.blue(configs.testCommand))
         core.endGroup()
 
-        commandOutput = (await _shellExec(configs.testCommand)) as {
+        commandOutput = (await shellExec(configs.testCommand)) as {
           stdout: string
           stderr: string
         }

@@ -73,6 +73,15 @@ inputs:
     description: 'Directory to run the test command in'
     required: false
     default: '.'
+
+outputs:
+  image:
+    description: 'The image used in the test'
+  php-version:
+    description: 'The PHP version used in the test'
+  wordpress-version:
+    description: 'The WordPress version used in the test'
+
 runs:
   using: 'node20'
   main: 'dist/index.js'
