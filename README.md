@@ -50,7 +50,7 @@ jobs:
         run: chromedriver --port=4444 >chromedriver.log 2>&1 &
 
       - name: Test
-        uses: impressible-wp/wordpress-ci@v1
+        uses: impressible-wp/wordpress-ci@v2
         with:
           # This folder will be binded to "wordpress-ci" container
           # /var/www/html/wp-content/plugins/myplugin
@@ -98,7 +98,7 @@ jobs:
         ...
 
       - name: Test
-        uses: impressible-wp/wordpress-ci@v1
+        uses: impressible-wp/wordpress-ci@v2
         with:
           image: ghcr.io/impressible-wp/wordpress-ci:php${{ matrix.php-version }}
           ...
